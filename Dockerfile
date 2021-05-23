@@ -1,6 +1,6 @@
-FROM golang:1.13-alpine
+FROM golang:1.16-alpine
 
-
+ENV GO111MODULE=off
 ENV PROJECT_PATH=github.com/Frosin/shoplist-telegram-bot
 
 RUN apk add --no-cache git
@@ -9,7 +9,7 @@ WORKDIR ${GOPATH}/src/${PROJECT_PATH}
 RUN git clone https://github.com/Frosin/shoplist-telegram-bot.git .
 
 COPY shoplist-bot.yaml cert.pem key.pem ./
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags "-X main.version=develop" -o shoplist-bot .
+RUN CGO_ENABLED=0 GOOS=linux go build -o shoplist-bot .
 
 ENTRYPOINT [ "./shoplist-bot"]
 EXPOSE 443

@@ -63,28 +63,28 @@ func GetStrikeThroughText(text string) string {
 	return result
 }
 
-//GetRemovedNumsByCode gets "r34,56,78,87" adn returns []int{34,54,78,87}
-func getRemovedNumsByCode(code string) ([]int, error) {
-	// if code consists "!" symbol
-	if index := strings.Index(code, consts.ListStartRemoveSymbol); index > 0 {
-		code = code[:len(code)-1]
-	}
+// //GetRemovedNumsByCode gets "r34,56,78,87" adn returns []int{34,54,78,87}
+// func getRemovedNumsByCode(code string) ([]int, error) {
+// 	// if code consists "!" symbol
+// 	if index := strings.Index(code, consts.ListStartRemoveSymbol); index > 0 {
+// 		code = code[:len(code)-1]
+// 	}
 
-	result := []int{}
-	arString := strings.Split(code[1:], ",")
-	for i, v := range arString {
-		if i == consts.ListOperationLimit {
-			break
-		}
-		//check corrent int value
-		value, err := strconv.Atoi(v)
-		if err != nil {
-			return nil, err
-		}
-		result = append(result, value)
-	}
-	return result, nil
-}
+// 	result := []int{}
+// 	arString := strings.Split(code[1:], ",")
+// 	for i, v := range arString {
+// 		if i == consts.ListOperationLimit {
+// 			break
+// 		}
+// 		//check corrent int value
+// 		value, err := strconv.Atoi(v)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		result = append(result, value)
+// 	}
+// 	return result, nil
+// }
 
 //IsInArray returns true if num exist in nums array
 func IsInArray(num int, nums []int) bool {

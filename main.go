@@ -5,8 +5,6 @@ import (
 	"net/http"
 	"strings"
 
-	"time"
-
 	"github.com/getsentry/sentry-go"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/spf13/viper"
@@ -39,10 +37,10 @@ func sentryInit(dsn string) {
 	})
 }
 
-func sentryCaptureError(err error) {
-	sentry.CaptureException(err)
-	sentry.Flush(time.Second * 5)
-}
+// func sentryCaptureError(err error) {
+// 	sentry.CaptureException(err)
+// 	sentry.Flush(time.Second * 5)
+// }
 
 func initConfig() {
 	if cfgFile != "" {
