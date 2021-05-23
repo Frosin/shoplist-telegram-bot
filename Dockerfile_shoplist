@@ -1,0 +1,21 @@
+FROM golang:1.13-alpine
+
+
+ENV PROJECT_PATH=github.com/Frosin/shoplist-api-client-go
+ENV MAIN_PATH=cmd/shoplist
+#ENV GO111MODULE=off
+
+RUN apk add --no-cache git
+RUN apk add --no-cache build-base
+RUN apk add --no-cache sqlite
+
+RUN mkdir -p ${GOPATH}/src/${PROJECT_PATH}
+WORKDIR ${GOPATH}/src/${PROJECT_PATH}
+RUN git clone https://github.com/Frosin/shoplist-api-client-go.git . 
+
+WORKDIR ${GOPATH}/src/${PROJECT_PATH}/${MAIN_PATH}
+RUN CGO_ENABLED=1 GOOS=linux go build -a -installsuffix cgo -ldflags "-X main.version=develop" -o shoplist .
+
+ENTRYPOINT [ "./shoplist", "serve", "-p", "8081" ]
+
+#EXPOSE 8081
