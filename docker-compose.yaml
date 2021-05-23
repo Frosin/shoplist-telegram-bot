@@ -2,16 +2,13 @@ version: '3.7'
 
 services:
   shoplist:
-    build:
-      context: ./
-      dockerfile: Dockerfile_shoplist
+    image: shoplist_shoplist
     environment:
       - SHOPLIST_API_VERSION=0.0.1
       - SHOPLIST_DB_PATH=db
       - SHOPLIST_DB_FILE_NAME=shoplist.db
       - SHOPLIST_SENTRY_DSN=https://70d91cb8123d4b149c225c315849f53c@sentry.io/1840045
     container_name: shoplist_server
-    # network_mode: host
     networks:
       - shoplist
     ports:
@@ -25,7 +22,6 @@ services:
       context: ./
       dockerfile: Dockerfile
     container_name: shoplist_bot
-    # network_mode: host
     networks:
       - shoplist
     ports:
