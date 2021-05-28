@@ -50,7 +50,7 @@ func (l *Logic) GetOutput(
 	//set current session for logic
 	node.SetSession(sessionItem)
 	//debug
-	fmt.Printf("IN LOGIC: i.message=%v, i/callbackdata=%v", i.Message, i.CallbackData)
+	fmt.Printf("IN LOGIC: i.message=%v, i/callbackdata=%v\n", i.Message, i.CallbackData)
 	//
 	switch {
 	case i.Message != nil:

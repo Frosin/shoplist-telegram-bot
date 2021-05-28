@@ -16,11 +16,13 @@ const (
 	MenuText       = "Меню"
 	AfterStartText = "\xE2\x9C\x8C"
 
-	FirstPageStart   = "firstpage_start"
-	CalendarStart    = "calendar_start"
-	SettingsStart    = "settings_start"
-	ChecklistStart   = "checklist_start"
-	CurrentListStart = "currentlist_start"
+	FirstPageStart     = "firstpage_start"
+	CalendarStart      = "calendar_start"
+	SettingsStart      = "settings_start"
+	ChecklistStart     = "checklist_start"
+	CurrentListStart   = "currentlist_start"
+	BugetStart         = "buget_start"
+	BugetCategoryStart = "bugetcategory_start"
 
 	CalendarWord      = "calendar"
 	DayshoppingsWord  = "dayshoppings"
@@ -28,6 +30,8 @@ const (
 	SettingsWord      = "settings"
 	ChecklistWord     = "checklist"
 	CurrentlistWord   = "currentlist"
+	BugetWord         = "buget"
+	BugetCategoryWord = "bugetcategory"
 
 	Start = "start"
 

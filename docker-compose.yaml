@@ -28,6 +28,9 @@ services:
      - 443:443
     tty: true
     restart: unless-stopped
+    volumes:
+      - ./db/buget.db:/go/src/github.com/Frosin/shoplist-telegram-bot/buget.db
+    
 networks:
   shoplist:
     external: true

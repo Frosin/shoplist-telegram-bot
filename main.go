@@ -9,9 +9,12 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/spf13/viper"
 
+	"github.com/Frosin/shoplist-telegram-bot/bugetstorage"
 	"github.com/Frosin/shoplist-telegram-bot/consts"
 	"github.com/Frosin/shoplist-telegram-bot/helpers"
 	"github.com/Frosin/shoplist-telegram-bot/logic"
+	"github.com/Frosin/shoplist-telegram-bot/logic/buget"
+	"github.com/Frosin/shoplist-telegram-bot/logic/bugetcategory"
 	"github.com/Frosin/shoplist-telegram-bot/logic/calendar"
 	"github.com/Frosin/shoplist-telegram-bot/logic/checklist"
 	"github.com/Frosin/shoplist-telegram-bot/logic/currentlist"
@@ -241,6 +244,11 @@ func main() {
 
 	sessionStorage := session.NewSessionStorage(serviceURI, startToken, bot)
 
+	bugetStorage, err := bugetstorage.NewStorage()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	//Create new logic with pages (nodes)
 	appLogic := logic.New().
 		AddNode(calendar.CalendarWord, calendar.New()).
@@ -249,7 +257,9 @@ func main() {
 		AddNode(consts.ShoppingitemsWord, shoppingitems.New()).
 		AddNode(consts.SettingsWord, settings.New()).
 		AddNode(consts.ChecklistWord, checklist.New()).
-		AddNode(consts.CurrentlistWord, currentlist.New())
+		AddNode(consts.CurrentlistWord, currentlist.New()).
+		AddNode(consts.BugetWord, buget.New(bugetStorage)).
+		AddNode(consts.BugetCategoryWord, bugetcategory.New(bugetStorage))
 
 	log.Println("start updates")
 	for update := range updates {

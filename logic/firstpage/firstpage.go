@@ -15,11 +15,13 @@ const (
 	checkList = "Чек-лист"
 	settings  = "Настройки"
 	calendar  = "Календарь"
+	buget     = "Бюджет"
 
 	CurListCmd   = "curlist"
 	CheckListCmd = "checklist"
 	SettingsCmd  = "settings"
 	CalendarCmd  = "calendar"
+	BugetCmd     = "buget"
 
 	firstPageMessage = "firstPage"
 )
@@ -50,10 +52,11 @@ func (f *firstpage) GetMessageOutput(curData string, msg string) (logic.Output, 
 func getButtons() *tgbotapi.InlineKeyboardMarkup {
 	return &tgbotapi.InlineKeyboardMarkup{
 		InlineKeyboard: [][]tgbotapi.InlineKeyboardButton{
-			[]tgbotapi.InlineKeyboardButton{tgbotapi.NewInlineKeyboardButtonData(curList, consts.CurrentListStart)}, //TODO add correct param
-			[]tgbotapi.InlineKeyboardButton{tgbotapi.NewInlineKeyboardButtonData(checkList, consts.ChecklistStart)},
-			[]tgbotapi.InlineKeyboardButton{tgbotapi.NewInlineKeyboardButtonData(settings, consts.SettingsStart)},
-			[]tgbotapi.InlineKeyboardButton{tgbotapi.NewInlineKeyboardButtonData(calendar, consts.CalendarStart)},
+			{tgbotapi.NewInlineKeyboardButtonData(curList, consts.CurrentListStart)}, //TODO add correct param
+			{tgbotapi.NewInlineKeyboardButtonData(checkList, consts.ChecklistStart)},
+			{tgbotapi.NewInlineKeyboardButtonData(settings, consts.SettingsStart)},
+			{tgbotapi.NewInlineKeyboardButtonData(calendar, consts.CalendarStart)},
+			{tgbotapi.NewInlineKeyboardButtonData(buget, consts.BugetStart)},
 		},
 	}
 }
