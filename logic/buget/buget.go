@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	bugetTxt = `Бюджет: '%s', освоение: %d%%
+	bugetTxt = `Бюджет: '%s', освоение: %d%%, остаток %d
 	Пример добавления категории: "25000 продукты"
 	Пример добавления бюджета: "!Июнь"`
 	backText   = "⬅ Назад"
@@ -176,8 +176,9 @@ func (c *buget) getOutput() (logic.Output, error) {
 		if category.Target > 0 {
 			fillPercent = int64(category.Current * 100 / category.Target)
 		}
+		remainder := category.Target - category.Current
 
-		btnTxt := fmt.Sprintf("%d. %s (%d%%)", i+1, itemName, fillPercent)
+		btnTxt := fmt.Sprintf("%d. %s (%d%%), ост: %dр.", i+1, itemName, fillPercent, remainder)
 		//debug
 		fmt.Printf("btnTxt=%s\n", btnTxt)
 
@@ -196,8 +197,9 @@ func (c *buget) getOutput() (logic.Output, error) {
 	if targetSum > 0 {
 		totalPercent = int64(curSum * 100 / targetSum)
 	}
+	remainder := targetSum - curSum
 
-	outTxt := fmt.Sprintf(bugetTxt, lastBuget[0].Title, totalPercent)
+	outTxt := fmt.Sprintf(bugetTxt, lastBuget[0].Title, totalPercent, remainder)
 
 	output := logic.Output{
 		Message:  outTxt,
