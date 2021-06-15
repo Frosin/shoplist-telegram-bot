@@ -5,3 +5,5 @@ shoplist-bot
 Procfile
 shoplist-telegram-bot
 db
+cert.pem
+key.pem
