@@ -153,7 +153,7 @@ func (c *buget) getOutput() (logic.Output, error) {
 		return emptyOut, nil
 	}
 
-	column := [][]tgbotapi.InlineKeyboardButton{controlButtons}
+	column := [][]tgbotapi.InlineKeyboardButton{}
 
 	var targetSum, curSum int64
 	// create items list to show
@@ -187,6 +187,7 @@ func (c *buget) getOutput() (logic.Output, error) {
 		}
 		column = append(column, row)
 	}
+	column = append(column, controlButtons)
 
 	//final keyboard
 	keyboard := &tgbotapi.InlineKeyboardMarkup{

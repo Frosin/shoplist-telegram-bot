@@ -32,7 +32,7 @@ var (
 	timeout = time.Second * 5
 
 	patternCallback = regexp.MustCompile(`i(\d+)`)
-	patternNewNote  = regexp.MustCompile(`(\d+)\s+(.+)`)
+	patternNewNote  = regexp.MustCompile(`(-?)(\d+)\s+(.+)`)
 )
 
 type bugetCategory struct {
@@ -94,11 +94,16 @@ func (c *bugetCategory) GetMessageOutput(curData string, msg string) (logic.Outp
 	}
 
 	m := patternNewNote.FindStringSubmatch(msg)
-	if len(m) != 3 {
+	if len(m) != 4 {
 		return c.getOutput(category)
 	}
-	noteTitle := m[2]
-	noteSum, _ := strconv.Atoi(m[1])
+	noteTitle := m[3]
+	noteSum, _ := strconv.Atoi(m[2])
+
+	//if minus
+	if m[1] != "" {
+		noteSum = noteSum * -1
+	}
 
 	newCurrent := category.Current + int64(noteSum)
 	category.Current = newCurrent
