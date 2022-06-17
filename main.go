@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"net/http"
 	"strings"
 
 	"github.com/getsentry/sentry-go"
@@ -39,11 +38,6 @@ func sentryInit(dsn string) {
 		Dsn: dsn,
 	})
 }
-
-// func sentryCaptureError(err error) {
-// 	sentry.CaptureException(err)
-// 	sentry.Flush(time.Second * 5)
-// }
 
 func initConfig() {
 	if cfgFile != "" {
@@ -94,7 +88,7 @@ func updateHandler(
 	log.Printf("update.Message=%v\n", update.Message)
 	//
 
-	if sessionItem.LastMsgID != 0 && update.CallbackQuery != nil {
+	if sessionItem != nil && sessionItem.LastMsgID != 0 && update.CallbackQuery != nil {
 		currentNode := helpers.GetNodeName(update.CallbackQuery.Data)
 		currentData := helpers.GetOperationName(update.CallbackQuery.Data)
 
@@ -229,18 +223,26 @@ func main() {
 
 	bot.Debug = true
 	log.Printf("Authorized on account %s", bot.Self.UserName)
-	_, err = bot.SetWebhook(tgbotapi.NewWebhookWithCert(webhookURL+bot.Token, "cert.pem"))
+
+	_, err = bot.RemoveWebhook()
 	if err != nil {
 		log.Fatal(err)
 	}
-	updates := bot.ListenForWebhook("/" + bot.Token)
-	go http.ListenAndServeTLS("0.0.0.0:"+port, "cert.pem", "key.pem", nil)
-	// u := tgbotapi.NewUpdate(0)
-	// u.Timeout = 60
-	// updates, err := bot.GetUpdatesChan(u)
+
+	//_, err = bot.SetWebhook(tgbotapi.NewWebhookWithCert(webhookURL+bot.Token, "cert.pem"))
 	// if err != nil {
 	// 	log.Fatal(err)
 	// }
+	// updates := bot.ListenForWebhook("/" + bot.Token)
+	// go http.ListenAndServeTLS("0.0.0.0:"+port, "cert.pem", "key.pem", nil)
+
+	u := tgbotapi.NewUpdate(0)
+	u.Timeout = 60
+
+	updates, err := bot.GetUpdatesChan(u)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	sessionStorage := session.NewSessionStorage(serviceURI, startToken, bot)
 
