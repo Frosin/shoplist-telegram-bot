@@ -5,6 +5,7 @@ import (
 	"log"
 	"strings"
 
+	"entgo.io/ent/dialect"
 	"github.com/getsentry/sentry-go"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/spf13/viper"
@@ -24,6 +25,7 @@ import (
 	"github.com/Frosin/shoplist-telegram-bot/logic/settings"
 	"github.com/Frosin/shoplist-telegram-bot/logic/shoppingitems"
 	"github.com/Frosin/shoplist-telegram-bot/session"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 const (
@@ -278,7 +280,7 @@ func getEnt() *ent.Client {
 	dbFullFileName := viper.GetString("SHOPLIST-BOT_SHOPLISTTPATH")
 
 	log.Println("shoplist file=", dbFullFileName)
-	client, err := ent.Open("sqlite3", fmt.Sprintf("file:%s?_fk=1", dbFullFileName))
+	client, err := ent.Open(dialect.SQLite, fmt.Sprintf("file:%s?_fk=1", dbFullFileName))
 	if err != nil {
 		log.Fatalf("failed opening connection to sqlite: %v", err)
 	}
