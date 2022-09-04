@@ -274,9 +274,7 @@ func main() {
 }
 
 func getEnt() *ent.Client {
-	dbFullFileName := viper.GetString("SHOPLIST-BOT_SHOPLISTTPATH")
-
-	client, err := ent.Open("sqlite3", dbFullFileName+"?_fk=1")
+	client, err := ent.Open("sqlite3", "shoplist.db")
 	if err != nil {
 		log.Fatalf("failed opening connection to sqlite: %v", err)
 	}

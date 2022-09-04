@@ -13,7 +13,7 @@ require (
 	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
 	github.com/jmoiron/sqlx v1.3.4
 	github.com/kr/pretty v0.2.0 // indirect
-	github.com/labstack/echo/v4 v4.1.14
+	github.com/labstack/echo/v4 v4.1.14 // indirect
 	github.com/labstack/gommon v0.3.0
 	github.com/mattn/go-isatty v0.0.12 // indirect
 	github.com/mattn/go-sqlite3 v1.14.13
