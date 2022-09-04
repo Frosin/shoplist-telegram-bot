@@ -53,6 +53,8 @@ func (s *Shoplist) GetUserByTelegramID(telegramID int) (*ent.User, error) {
 		return nil, fmt.Errorf("GetUserByTelegramID error: %w", err)
 	}
 
+	log.Info("GetUserByTelegramID", user)
+
 	return user, nil
 }
 
@@ -67,6 +69,8 @@ func (s *Shoplist) GetUsersByComunityID(comunityID string) ([]*ent.User, error) 
 	if err != nil {
 		return nil, fmt.Errorf("GetUsersByComunityID error: %w", err)
 	}
+
+	log.Info("GetUsersByComunityID", users)
 
 	return users, nil
 }
@@ -91,6 +95,8 @@ func (s *Shoplist) CreateUser(userID int, chatID int64, username string) (*ent.U
 		return nil, fmt.Errorf("CreateUser error: %w", err)
 	}
 
+	log.Info("CreateUser", user)
+
 	return user, nil
 }
 
@@ -106,7 +112,6 @@ func (s *Shoplist) UpdateUser(userID int, comunityID, userName *string) error {
 		if err != nil {
 			return fmt.Errorf("UpdateUser error: %w", err)
 		}
-
 	}
 
 	if userName != nil {
@@ -149,6 +154,7 @@ func (s *Shoplist) getCommunityUsers() (int, []int, error) {
 	if err != nil {
 		return 0, nil, fmt.Errorf("getCommunityUsers getUser error: %w", err)
 	}
+
 	log.Infof("userID=%v, userTelegramID=%v, userToken=%v, userComunityID=%v", usr.ID, usr.TelegramID, usr.Token, usr.ComunityID)
 
 	comunityUsers, err := s.ent.User.
@@ -198,6 +204,8 @@ func (s *Shoplist) GetShoppingDays(time time.Time) ([]int, error) {
 		return nil, fmt.Errorf("GetShoppingDays get monthShoppings error: %w", err)
 	}
 
+	log.Info("GetShoppingDays", monthShoppings)
+
 	var result []int
 	for _, v := range monthShoppings {
 		result = append(result, v.Date.Day())
@@ -245,6 +253,8 @@ func (s *Shoplist) GetShoppingsByDay(sDay time.Time) ([]*ent.Shopping, error) {
 		return nil, fmt.Errorf("GetShoppingsByDay get shoppings error: %w", err)
 	}
 
+	log.Info("GetShoppingsByDay", shoppings)
+
 	return shoppings, nil
 }
 
@@ -260,6 +270,8 @@ func (s *Shoplist) GetShoppingItems(shoppingID int) ([]*ent.Item, error) {
 	if err != nil {
 		return nil, fmt.Errorf("GetShoppingItems error: %w", err)
 	}
+
+	log.Info("GetShoppingItems", goods)
 
 	return goods, nil
 }
@@ -286,6 +298,8 @@ func (s *Shoplist) GetShopping(ID int) (*ent.Shopping, error) {
 	if err != nil {
 		return nil, fmt.Errorf("GetShopping: %w", err)
 	}
+
+	log.Info("GetShopping", shopping)
 
 	return shopping, nil
 }
@@ -314,6 +328,8 @@ func (s *Shoplist) GetSpecialShopping(sType consts.ShoppingType) (int, error) {
 	if err != nil {
 		return 0, fmt.Errorf("GetSpecialShopping: %w", err)
 	}
+
+	log.Info("GetSpecialShopping", shopping)
 
 	return shopping.ID, nil
 }
@@ -385,6 +401,8 @@ func (s *Shoplist) AddShoppingWithType(day time.Time, shopName string, shoppingT
 		}
 	}
 
+	log.Info("AddShoppingWithType", shp)
+
 	ownerID, _, err := s.getCommunityUsers()
 	if err != nil {
 		return 0, fmt.Errorf("AddShoppingWithType: %w", err)
@@ -407,6 +425,8 @@ func (s *Shoplist) AddShoppingWithType(day time.Time, shopName string, shoppingT
 	if err != nil {
 		return 0, fmt.Errorf("AddShoppingWithType withTx: %w", err)
 	}
+
+	log.Info("AddShoppingWithType", newShopping)
 
 	return newShopping.ID, nil
 }
