@@ -7,3 +7,5 @@ shoplist-telegram-bot
 db
 cert.pem
 key.pem
+shoplist.db
+buget.db

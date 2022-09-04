@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"strings"
 
@@ -274,7 +275,10 @@ func main() {
 }
 
 func getEnt() *ent.Client {
-	client, err := ent.Open("sqlite3", "shoplist.db")
+	dbFullFileName := viper.GetString("SHOPLIST-BOT_SHOPLISTTPATH")
+
+	log.Println("shoplist file=", dbFullFileName)
+	client, err := ent.Open("sqlite3", fmt.Sprintf("file:%s?_fk=1", dbFullFileName))
 	if err != nil {
 		log.Fatalf("failed opening connection to sqlite: %v", err)
 	}
