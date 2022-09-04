@@ -115,7 +115,7 @@ func (c *buget) GetMessageOutput(curData string, msg string) (logic.Output, erro
 
 func (c *buget) getOutput() (logic.Output, error) {
 	bugetCommunity := viper.GetString("SHOPLIST-BUDGET_COMMUNITY")
-	if *c.sessionItem.User.ComunityId != bugetCommunity {
+	if c.sessionItem.User.ComunityID != bugetCommunity {
 		return logic.Output{}, nil
 	}
 

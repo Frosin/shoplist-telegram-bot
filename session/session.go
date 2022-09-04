@@ -4,7 +4,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/Frosin/shoplist-api-client-go/client"
+	"github.com/Frosin/shoplist-telegram-bot/internal/shoplist/ent"
 	"github.com/Frosin/shoplist-telegram-bot/shoplist"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
@@ -19,7 +19,7 @@ type SessionItem struct {
 	CurrentData string
 	LastMsgID   int
 	ChatID      int64
-	User        *client.UserWithID
+	User        *ent.User
 	removeTimer *time.Timer
 	Data        interface{} //its field may be consists any value, we need
 }
@@ -29,14 +29,16 @@ type SessionStorage struct {
 	startToken string
 	items      map[int]*SessionItem //index by telegramUserID
 	botAPI     *tgbotapi.BotAPI
+	e          *ent.Client
 }
 
-func NewSessionStorage(serviceURL, startToken string, botAPI *tgbotapi.BotAPI) *SessionStorage {
+func NewSessionStorage(serviceURL, startToken string, botAPI *tgbotapi.BotAPI, e *ent.Client) *SessionStorage {
 	storage := SessionStorage{
 		serviceURL: serviceURL,
 		startToken: startToken,
 		items:      map[int]*SessionItem{},
 		botAPI:     botAPI,
+		e:          e,
 	}
 	return &storage
 }
@@ -49,28 +51,22 @@ func (s *SessionStorage) deferredDeletion(item *SessionItem) {
 		// 		tgbotapi.KeyboardButton{Text: consts.MenuText},
 		// 	})
 		// s.botAPI.Send(startMessage)
-		delete(s.items, *item.User.TelegramId)
+		delete(s.items, int(item.User.TelegramID))
 	})
 }
 
 func (s *SessionStorage) Add(user *tgbotapi.User, chatID int64, startNode string) (*SessionItem, error) {
 	// base client for create user
-	client, err := shoplist.NewShoplistAPI(s.serviceURL, s.startToken)
-	if err != nil {
-		return nil, err
-	}
+	client := shoplist.NewShoplistAPI(s.e, s.startToken)
 	// init user
 	userData, err := client.UserInit(user.ID, chatID, user.UserName)
 	if err != nil {
 		return nil, err
 	}
-	newTokenClient, err := shoplist.NewShoplistAPI(
-		s.serviceURL,
-		*userData.Token,
+	newTokenClient := shoplist.NewShoplistAPI(
+		s.e,
+		userData.Token,
 	)
-	if err != nil {
-		return nil, err
-	}
 
 	// save session in storage
 	item := SessionItem{
@@ -126,7 +122,7 @@ func (s *SessionStorage) Get(update tgbotapi.Update, startNode string) (*Session
 	//debug
 	log.Printf("len=(%v)", len(s.items))
 	for i, v := range s.items {
-		log.Printf("%v-> sAPI=%v, userID=%v, communityID=%v", i, v.SListAPI, *v.User.TelegramId, *v.User.ComunityId)
+		log.Printf("%v-> sAPI=%v, userID=%v, communityID=%v", i, v.SListAPI, v.User.TelegramID, v.User.ComunityID)
 	}
 	//
 	return item, nil

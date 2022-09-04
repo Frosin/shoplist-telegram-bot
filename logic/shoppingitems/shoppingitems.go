@@ -68,6 +68,9 @@ func (s *shoppingItems) GetCallbackOutput(command string) (logic.Output, error) 
 			//remove items and get output
 			selectItems := s.sessionItem.GetDataAsArray()
 			err = s.sessionItem.SListAPI.RemoveItems(selectItems)
+			if err != nil {
+				return logic.Output{}, err
+			}
 			// delete items
 			s.sessionItem.ClearDataArray()
 			return s.getOutput(parseResult, nil)
@@ -86,14 +89,14 @@ func (s *shoppingItems) GetCallbackOutput(command string) (logic.Output, error) 
 				return logic.Output{}, err
 			}
 			// get currentlist items
-			currentlistItems, err := s.sessionItem.SListAPI.GetShoppingItems(*currentlistShoppingID)
+			currentlistItems, err := s.sessionItem.SListAPI.GetShoppingItems(currentlistShoppingID)
 			if err != nil {
 				return logic.Output{}, fmt.Errorf("%v: %w", consts.ShoppingitemsWord, err)
 			}
 
 			//add current list items to shopping with duplicate check
 			alreadyExist := func(itemName string) bool {
-				for _, shoppingItem := range *items {
+				for _, shoppingItem := range items {
 					if itemName == shoppingItem.ProductName {
 						return true
 					}
@@ -102,12 +105,12 @@ func (s *shoppingItems) GetCallbackOutput(command string) (logic.Output, error) 
 			}
 
 			currentItemsIDs := []int{}
-			for _, currentlistItem := range *currentlistItems {
+			for _, currentlistItem := range currentlistItems {
 				if alreadyExist(currentlistItem.ProductName) {
 					continue
 				}
 
-				currentItemsIDs = append(currentItemsIDs, *currentlistItem.Id)
+				currentItemsIDs = append(currentItemsIDs, currentlistItem.ID)
 
 				err = s.sessionItem.SListAPI.AddItem(parseResult.ShoppingID, currentlistItem.ProductName)
 				if err != nil {
@@ -138,14 +141,14 @@ func (s *shoppingItems) GetCallbackOutput(command string) (logic.Output, error) 
 				return logic.Output{}, err
 			}
 			// get currentlist items
-			checklistItems, err := s.sessionItem.SListAPI.GetShoppingItems(*checklistShoppingID)
+			checklistItems, err := s.sessionItem.SListAPI.GetShoppingItems(checklistShoppingID)
 			if err != nil {
 				return logic.Output{}, fmt.Errorf("%v: %w", consts.ShoppingitemsWord, err)
 			}
 
 			//add current list items to shopping with duplicate check
 			alreadyExist := func(itemName string) bool {
-				for _, shoppingItem := range *items {
+				for _, shoppingItem := range items {
 					if itemName == shoppingItem.ProductName {
 						return true
 					}
@@ -154,12 +157,12 @@ func (s *shoppingItems) GetCallbackOutput(command string) (logic.Output, error) 
 			}
 
 			checklistItemsIDs := []int{}
-			for _, checklistItem := range *checklistItems {
+			for _, checklistItem := range checklistItems {
 				if alreadyExist(checklistItem.ProductName) {
 					continue
 				}
 
-				checklistItemsIDs = append(checklistItemsIDs, *checklistItem.Id)
+				checklistItemsIDs = append(checklistItemsIDs, checklistItem.ID)
 
 				err = s.sessionItem.SListAPI.AddItem(parseResult.ShoppingID, checklistItem.ProductName)
 				if err != nil {
@@ -205,7 +208,7 @@ func (s *shoppingItems) getOutput(parseObject *helpers.ParseResult, addedItemNam
 
 	backBtnParam := helpers.GetParam(
 		consts.DayshoppingsWord,
-		"d"+shoppingData.Date,
+		"d"+shoppingData.Date.Format("2006-01-02"),
 	)
 
 	//create keyboard and add back button to keyboard
@@ -233,11 +236,11 @@ func (s *shoppingItems) getOutput(parseObject *helpers.ParseResult, addedItemNam
 	column := [][]tgbotapi.InlineKeyboardButton{}
 
 	// create items list to show
-	for i, data := range *items {
-		itemIDStr := strconv.Itoa(*data.Id)
+	for i, data := range items {
+		itemIDStr := strconv.Itoa(data.ID)
 		itemName := data.ProductName
 		// strikethrough item name
-		if helpers.IsInArray(*data.Id, selectedItems) {
+		if helpers.IsInArray(data.ID, selectedItems) {
 			itemName = helpers.GetStrikeThroughText(itemName)
 		}
 
@@ -300,10 +303,10 @@ func (s *shoppingItems) getOutput(parseObject *helpers.ParseResult, addedItemNam
 	if addedItemName != nil {
 		msg := fmt.Sprintf(
 			"Пользователь %s(%v) добавил '%s' в '%s'(%s)",
-			*s.sessionItem.User.TelegramUsername,
-			*s.sessionItem.User.TelegramId,
+			s.sessionItem.User.TelegramUsername,
+			s.sessionItem.User.TelegramID,
 			*addedItemName,
-			shoppingData.Name,
+			shoppingData.Edges.Shop.Name,
 			shoppingData.Date,
 		)
 		output.MessageToCommunity = &msg

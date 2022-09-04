@@ -2,107 +2,76 @@ package shoplist
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/Frosin/shoplist-telegram-bot/consts"
-	"github.com/davecgh/go-spew/spew"
+	"github.com/Frosin/shoplist-telegram-bot/internal/shoplist/ent"
+	"github.com/Frosin/shoplist-telegram-bot/internal/shoplist/ent/item"
+	"github.com/Frosin/shoplist-telegram-bot/internal/shoplist/ent/predicate"
+	"github.com/Frosin/shoplist-telegram-bot/internal/shoplist/ent/shop"
+	"github.com/Frosin/shoplist-telegram-bot/internal/shoplist/ent/shopping"
+	"github.com/Frosin/shoplist-telegram-bot/internal/shoplist/ent/user"
 	"github.com/dchest/uniuri"
+	"github.com/labstack/gommon/log"
 
-	"github.com/Frosin/shoplist-api-client-go/client"
-
-	"github.com/deepmap/oapi-codegen/pkg/securityprovider"
+	entSql "entgo.io/ent/dialect/sql"
 )
 
-//Shoplist api struct
+const (
+	dateLayout = "2006-01-02"
+	timeLayout = "15:04:05"
+
+	shoppingTypeDefault     = 0
+	shoppingTypeCheckList   = 1
+	shoppingTypeCurrentList = 2
+)
+
 type Shoplist struct {
-	Client *client.ClientWithResponses
+	token string
+	ent   *ent.Client
 }
 
 //NewShoplistAPI returns new Shoplist api instance
-func NewShoplistAPI(url, token string) (*Shoplist, error) {
-	shClient := &Shoplist{}
-
-	apiKeyProvider, apiKeyProviderErr := securityprovider.NewSecurityProviderApiKey(
-		"query",
-		"accesstoken",
-		token,
-	)
-	if apiKeyProviderErr != nil {
-		return nil, apiKeyProviderErr
+func NewShoplistAPI(e *ent.Client, token string) *Shoplist {
+	return &Shoplist{
+		token: token,
+		ent:   e,
 	}
-
-	api, apiErr := client.NewClientWithResponses(
-		url,
-		client.WithRequestEditorFn(apiKeyProvider.Intercept),
-	)
-
-	if apiErr != nil {
-		return nil, apiErr
-	}
-
-	shClient.Client = api
-	return shClient, nil
 }
 
-func badStatusError(status string) error {
-	return errors.New("bad status = " + status)
-}
-
-func (s *Shoplist) GetUserByTelegramID(telegramID int) (*client.UserWithID, error) {
+func (s *Shoplist) GetUserByTelegramID(telegramID int) (*ent.User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), consts.ReadTimeout)
 	defer cancel()
 
-	telegramUserID := client.TelegramUserId(telegramID)
-
-	response, err := s.Client.GetUsersWithResponse(
-		ctx,
-		&client.GetUsersParams{
-			TelegramUserId: &telegramUserID,
-		},
-	)
+	user, err := s.ent.User.
+		Query().
+		Where(user.TelegramIDEQ(int64(telegramID))).
+		Only(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("GetUserByTelegramID error: %w", err)
 	}
 
-	switch {
-	case response.StatusCode() == 404:
-		return nil, consts.ErrNotFound
-	case response.StatusCode() != 200:
-		return nil, badStatusError(response.Status())
-	}
-	data := *response.JSON200.Data
-	return &data[0], nil
+	return user, nil
 }
 
-func (s *Shoplist) GetUsersByComunityID(comunityID string) ([]client.UserWithID, error) {
+func (s *Shoplist) GetUsersByComunityID(comunityID string) ([]*ent.User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), consts.ReadTimeout)
 	defer cancel()
 
-	comunityUserID := client.ComunityId(comunityID)
-	response, err := s.Client.GetUsersWithResponse(ctx, &client.GetUsersParams{
-		ComunityId: &comunityUserID,
-	})
+	users, err := s.ent.User.
+		Query().
+		Where(user.ComunityIDEQ(comunityID)).
+		All(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("GetUsersByComunityID error: %w", err)
 	}
 
-	switch {
-	case response.StatusCode() == 404:
-		return nil, consts.ErrNotFound
-	case response.StatusCode() != 200:
-		return nil, badStatusError(response.Status())
-	}
-	//debug
-	fmt.Println("response dump:")
-	spew.Dump(response.JSON200)
-	//
-	data := response.JSON200.Data
-	return *data, nil
+	return users, nil
 }
 
-func (s *Shoplist) CreateUser(userID int, chatID int64, username string) (*client.UserWithID, error) {
+func (s *Shoplist) CreateUser(userID int, chatID int64, username string) (*ent.User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), consts.ReadTimeout)
 	defer cancel()
 
@@ -110,76 +79,91 @@ func (s *Shoplist) CreateUser(userID int, chatID int64, username string) (*clien
 	comunityID := uniuri.New()
 	intChatID := int64(chatID)
 
-	response, err := s.Client.
-		CreateUserWithResponse(ctx, client.CreateUserJSONRequestBody(
-			client.UserRequest(
-				client.User{
-					Token:            &token,
-					TelegramUsername: &username,
-					TelegramId:       &userID,
-					ComunityId:       &comunityID,
-					ChatId:           &intChatID,
-				},
-			),
-		),
-		)
+	user, err := s.ent.User.
+		Create().
+		SetChatID(int64(intChatID)).
+		SetComunityID(comunityID).
+		SetTelegramID(int64(userID)).
+		SetTelegramUsername(username).
+		SetToken(token).Save(ctx)
+
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("CreateUser error: %w", err)
 	}
-	if response.StatusCode() != 200 {
-		return nil, badStatusError(response.Status())
-	}
-	data := *response.JSON200.Data
-	return &data[0], nil
+
+	return user, nil
 }
 
 func (s *Shoplist) UpdateUser(userID int, comunityID, userName *string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), consts.ReadTimeout)
 	defer cancel()
 
-	params := &client.UpdateUserParams{
-		UserId: client.UserId(userID),
-	}
-	response, err := s.Client.UpdateUserWithResponse(
-		ctx,
-		params,
-		client.UpdateUserJSONRequestBody(
-			client.UserRequest(
-				client.User{
-					ComunityId:       comunityID,
-					TelegramUsername: userName,
-				},
-			),
-		),
-	)
-	if err != nil {
-		return err
+	if comunityID != nil {
+		_, err := s.ent.User.
+			UpdateOneID(userID).
+			SetComunityID(*comunityID).
+			Save(ctx)
+		if err != nil {
+			return fmt.Errorf("UpdateUser error: %w", err)
+		}
+
 	}
 
-	switch {
-	case response.StatusCode() == 404:
-		return consts.ErrNotFound
-	case response.StatusCode() != 200:
-		return badStatusError(response.Status())
+	if userName != nil {
+		_, err := s.ent.User.
+			UpdateOneID(userID).
+			SetTelegramUsername(*userName).
+			Save(ctx)
+		if err != nil {
+			return fmt.Errorf("UpdateUser error: %w", err)
+		}
 	}
+
 	return nil
 }
 
-func (s *Shoplist) UserInit(telegramUserID int, chatID int64, userName string) (*client.UserWithID, error) {
-	user := &client.UserWithID{}
+func (s *Shoplist) UserInit(telegramUserID int, chatID int64, userName string) (*ent.User, error) {
 	user, err := s.GetUserByTelegramID(telegramUserID)
 
 	switch {
-	case err == consts.ErrNotFound:
+	case ent.IsNotFound(err):
 		user, err = s.CreateUser(telegramUserID, chatID, userName)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("UserInit error: %w", err)
 		}
 	case err != nil:
-		return nil, err
+		return nil, fmt.Errorf("UserInit error: %w", err)
 	}
 
 	return user, nil
+}
+
+func (s *Shoplist) getCommunityUsers() (int, []int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), consts.ReadTimeout)
+	defer cancel()
+	// get user by token
+	usr, err := s.ent.User.
+		Query().
+		Where(user.TokenEQ(s.token)).
+		Only(ctx)
+	if err != nil {
+		return 0, nil, fmt.Errorf("getCommunityUsers getUser error: %w", err)
+	}
+	log.Infof("userID=%v, userTelegramID=%v, userToken=%v, userComunityID=%v", usr.ID, usr.TelegramID, usr.Token, usr.ComunityID)
+
+	comunityUsers, err := s.ent.User.
+		Query().
+		Where(user.ComunityIDEQ(usr.ComunityID)).
+		All(ctx)
+	if err != nil {
+		return 0, nil, fmt.Errorf("getCommunityUsers get comunityUsers error: %w", err)
+	}
+	comUserIDs := []int{}
+	for _, v := range comunityUsers {
+		comUserIDs = append(comUserIDs, v.ID)
+	}
+
+	return usr.ID, comUserIDs, nil
 }
 
 //GetShoppingDays returns days with shoppings by date params
@@ -187,170 +171,270 @@ func (s *Shoplist) GetShoppingDays(time time.Time) ([]int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), consts.ReadTimeout)
 	defer cancel()
 
-	response, err := s.Client.GetShoppingDaysWithResponse(
-		ctx,
-		client.Year(time.Year()),
-		client.Month(int(time.Month())),
-	)
+	strMonth := strconv.Itoa(int(time.Month()))
+	if time.Month() < 10 {
+		strMonth = "0" + strMonth
+	}
+	queryParam := fmt.Sprintf("%v-%s%%", time.Year(), strMonth)
+
+	_, comUserIDs, err := s.getCommunityUsers()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("GetShoppingDays: %w", err)
 	}
-	if response.StatusCode() != 200 {
-		return nil, badStatusError(response.Status())
+
+	monthShoppings, err := s.ent.Shopping.
+		Query().
+		Where(
+			shopping.HasUserWith(
+				user.IDIn(comUserIDs...),
+			),
+			shopping.TypeEQ(shoppingTypeDefault),
+			predicate.Shopping(func(s *entSql.Selector) {
+				s.Where(entSql.Like(s.C(shopping.FieldDate), queryParam))
+			})).
+		All(ctx)
+
+	if err != nil {
+		return nil, fmt.Errorf("GetShoppingDays get monthShoppings error: %w", err)
 	}
-	data := response.JSON200.Data
-	if data == nil {
-		//return nil, errors.New("days data is nil")
-		return []int{}, nil
+
+	var result []int
+	for _, v := range monthShoppings {
+		result = append(result, v.Date.Day())
 	}
-	return *data, nil
+
+	return result, nil
 }
 
-func (s *Shoplist) TestPing() error {
+func (s *Shoplist) GetShoppingsByDay(sDay time.Time) ([]*ent.Shopping, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), consts.ReadTimeout)
 	defer cancel()
 
-	response, err := s.Client.LastShoppingWithResponse(ctx)
+	_, comUserIDs, err := s.getCommunityUsers()
 	if err != nil {
-		return err
+		return nil, fmt.Errorf("GetShoppingsByDay: %w", err)
 	}
 
-	if response.JSON200.Errors == nil {
-		return nil
+	strMonth := strconv.Itoa(int(sDay.Month()))
+	if sDay.Month() < 10 {
+		strMonth = "0" + strMonth
 	}
-	return errors.New("bad response")
+
+	strDay := strconv.Itoa(int(sDay.Day()))
+	if sDay.Day() < 10 {
+		strDay = "0" + strDay
+	}
+
+	queryParam := fmt.Sprintf("%v-%s-%s%%", sDay.Year(), strMonth, strDay)
+
+	shoppings, err := s.ent.Shopping.
+		Query().
+		WithShop().
+		WithUser().
+		Where(
+			shopping.HasUserWith(
+				user.IDIn(comUserIDs...),
+			),
+			shopping.TypeEQ(shoppingTypeDefault),
+			predicate.Shopping(func(s *entSql.Selector) {
+				s.Where(entSql.Like(s.C(shopping.FieldDate), queryParam))
+			})).
+		All(ctx)
+
+	if err != nil {
+		return nil, fmt.Errorf("GetShoppingsByDay get shoppings error: %w", err)
+	}
+
+	return shoppings, nil
 }
 
-func (s *Shoplist) GetShoppingsByDay(sDay time.Time) ([]client.ShoppingWithId, error) {
+func (s *Shoplist) GetShoppingItems(shoppingID int) ([]*ent.Item, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), consts.ReadTimeout)
 	defer cancel()
 
-	year := client.Year(sDay.Year())
-	month := client.Month(sDay.Month())
-	day := client.Day(sDay.Day())
-
-	response, err := s.Client.GetShoppingsByDayWithResponse(ctx, year, month, day)
+	goods, err := s.ent.Item.
+		Query().
+		WithShopping().
+		Where(item.HasShoppingWith(shopping.IDEQ(int(shoppingID)))).
+		All(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("GetShoppingItems error: %w", err)
 	}
-	if response.StatusCode() != 200 {
-		return nil, badStatusError(response.Status())
-	}
-	data := response.JSON200.Data
 
-	return data, nil
+	return goods, nil
 }
 
-func (s *Shoplist) GetShoppingItems(shoppingID int) (*[]client.ShoppingItem, error) {
+func (s *Shoplist) GetShopping(ID int) (*ent.Shopping, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), consts.ReadTimeout)
 	defer cancel()
 
-	response, err := s.Client.GetGoodsWithResponse(ctx, client.ShoppingID(shoppingID))
+	_, comUserIDs, err := s.getCommunityUsers()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("GetShopping: %w", err)
 	}
-	if response.StatusCode() != 200 {
-		if response.StatusCode() == 404 {
-			return nil, consts.ErrNotFound
-		}
-		return nil, badStatusError(response.Status())
-	}
-	data := response.JSON200.Data
 
-	return &data, nil
+	shopping, err := s.ent.Shopping.
+		Query().
+		WithShop().
+		WithUser().
+		Where(
+			shopping.IDEQ(ID),
+			shopping.HasUserWith(
+				user.IDIn(comUserIDs...),
+			)).
+		Only(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("GetShopping: %w", err)
+	}
+
+	return shopping, nil
 }
 
-func (s *Shoplist) GetShopping(ID int) (*client.ShoppingWithId, error) {
+func (s *Shoplist) GetSpecialShopping(sType consts.ShoppingType) (int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), consts.ReadTimeout)
 	defer cancel()
 
-	response, err := s.Client.GetShoppingWithResponse(ctx, client.ShoppingID(ID))
+	ownerID, _, err := s.getCommunityUsers()
 	if err != nil {
-		return nil, err
+		return 0, fmt.Errorf("GetSpecialShopping: %w", err)
 	}
-	if response.StatusCode() != 200 {
-		return nil, badStatusError(response.Status())
-	}
-	data := response.JSON200.Data
-	return data, nil
-}
 
-func (s *Shoplist) GetSpecialShopping(sType consts.ShoppingType) (*int, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), consts.ReadTimeout)
-	defer cancel()
+	shopping, err := s.ent.Shopping.
+		Query().
+		WithShop().
+		WithUser().
+		Where(
+			shopping.TypeEQ(int(sType)),
+			shopping.HasUserWith(
+				user.IDEQ(ownerID),
+			),
+		).
+		Only(ctx)
 
-	response, err := s.Client.GetSpecialShoppingWithResponse(ctx, client.ShoppingType(sType))
 	if err != nil {
-		return nil, err
-	}
-	switch {
-	case response.StatusCode() == 404:
-		return nil, consts.ErrNotFound
-	case response.StatusCode() != 200:
-		return nil, badStatusError(response.Status())
+		return 0, fmt.Errorf("GetSpecialShopping: %w", err)
 	}
 
-	data := response.JSON200.Data.Id
-	return data, nil
+	return shopping.ID, nil
 }
 
 func (s *Shoplist) AddItem(shoppingID int, itemName string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), consts.WriteTimeout)
 	defer cancel()
 
-	request := client.AddItemJSONRequestBody(
-		client.ItemRequest{
-			ShoppingItemParams: client.ShoppingItemParams{
-				CategoryID:  0,
-				Complete:    false,
-				ListID:      shoppingID,
-				ProductName: itemName,
-				Quantity:    1,
-			},
-		},
-	)
-	_, err := s.Client.AddItem(ctx, request)
-	return err
+	shopping, err := s.ent.Shopping.
+		Query().
+		Where(shopping.IDEQ(shoppingID)).
+		Only(ctx)
+
+	if err != nil {
+		return fmt.Errorf("AddItem getShopping: %w", err)
+	}
+
+	err = WithTx(ctx, s.ent, func(tx *ent.Tx) error {
+		_, err := tx.Item.
+			Create().
+			SetProductName(itemName).
+			SetShopping(shopping).
+			Save(ctx)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("AddItem withTx: %w", err)
+	}
+
+	return nil
 }
 
 func (s *Shoplist) RemoveItems(items []int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), consts.WriteTimeout)
 	defer cancel()
 
-	request := client.DeleteItemsJSONRequestBody{}
-	request.Ids = items
-	_, err := s.Client.DeleteItems(ctx, request)
-	return err
+	_, err := s.ent.Item.Delete().Where(item.IDIn(items...)).Exec(ctx)
+	if err != nil {
+		return fmt.Errorf("RemoveItems: %w", err)
+	}
+
+	return nil
 }
 
-func (s *Shoplist) AddShoppingWithType(day time.Time, shopName string, shoppingType consts.ShoppingType) (*int, error) {
+func (s *Shoplist) AddShoppingWithType(day time.Time, shopName string, shoppingType consts.ShoppingType) (int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), consts.WriteTimeout)
 	defer cancel()
 
-	shoppingData := client.ShoppingParams{
-		Date:    day.Format(consts.DateLayout),
-		Name:    shopName,
-		OwnerID: 0, // shoplist api will get userID from token
-		Time:    "12:00:00",
-		Type:    int(shoppingType),
+	shp, err := s.ent.Shop.
+		Query().
+		Where(shop.NameEQ(shopName)).
+		First(ctx)
+
+	if err != nil {
+		switch {
+		case ent.IsNotFound(err):
+			shp, err = s.ent.Shop.
+				Create().
+				SetName(shopName).
+				Save(ctx)
+			if err != nil {
+				return 0, fmt.Errorf("AddShoppingWithType create: %w", err)
+			}
+		default:
+			return 0, fmt.Errorf("AddShoppingWithType get shop: %w", err)
+		}
 	}
 
-	request := client.AddShoppingJSONRequestBody(
-		client.ShoppingRequest{
-			Shopping: client.Shopping{
-				ShoppingParams: shoppingData,
-			},
-		},
-	)
-
-	response, err := s.Client.AddShoppingWithResponse(ctx, request)
-	if response.StatusCode() != 200 {
-		return nil, badStatusError(response.Status())
+	ownerID, _, err := s.getCommunityUsers()
+	if err != nil {
+		return 0, fmt.Errorf("AddShoppingWithType: %w", err)
 	}
-	return response.JSON200.Data.Id, err
+
+	var newShopping *ent.Shopping
+	err = WithTx(ctx, s.ent, func(tx *ent.Tx) error {
+		newShopping, err = tx.Shopping.
+			Create().
+			SetShop(shp).
+			SetDate(day).
+			SetUserID(ownerID).
+			SetType(int(shoppingType)).
+			Save(ctx)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		return 0, fmt.Errorf("AddShoppingWithType withTx: %w", err)
+	}
+
+	return newShopping.ID, nil
 }
 
 func (s *Shoplist) AddShopping(day time.Time, shopName string) error {
 	_, err := s.AddShoppingWithType(day, shopName, consts.ShoppingTypeDefault)
 	return err
+}
+
+func WithTx(ctx context.Context, client *ent.Client, fn func(tx *ent.Tx) error) error {
+	tx, err := client.Tx(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if v := recover(); v != nil {
+			tx.Rollback()
+			panic(v)
+		}
+	}()
+	if err := fn(tx); err != nil {
+		if rerr := tx.Rollback(); rerr != nil {
+			err = fmt.Errorf("rolling back transaction: %w", rerr)
+		}
+		return err
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("committing transaction: %w", err)
+	}
+	return nil
 }

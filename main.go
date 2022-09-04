@@ -11,6 +11,7 @@ import (
 	"github.com/Frosin/shoplist-telegram-bot/bugetstorage"
 	"github.com/Frosin/shoplist-telegram-bot/consts"
 	"github.com/Frosin/shoplist-telegram-bot/helpers"
+	"github.com/Frosin/shoplist-telegram-bot/internal/shoplist/ent"
 	"github.com/Frosin/shoplist-telegram-bot/logic"
 	"github.com/Frosin/shoplist-telegram-bot/logic/buget"
 	"github.com/Frosin/shoplist-telegram-bot/logic/bugetcategory"
@@ -110,16 +111,16 @@ func updateHandler(
 		}
 
 		if output.MessageToCommunity != nil {
-			communityUsers, err := sessionItem.SListAPI.GetUsersByComunityID(*sessionItem.User.ComunityId)
+			communityUsers, err := sessionItem.SListAPI.GetUsersByComunityID(sessionItem.User.ComunityID)
 			if err != nil {
 				sendErrorMessage(bot, update, err)
 			}
 
 			for _, user := range communityUsers {
-				if *user.TelegramId == *sessionItem.User.TelegramId {
+				if user.TelegramID == sessionItem.User.TelegramID {
 					continue
 				}
-				newMsg := tgbotapi.NewMessage(*user.ChatId, *output.MessageToCommunity)
+				newMsg := tgbotapi.NewMessage(user.ChatID, *output.MessageToCommunity)
 				_, err := bot.Send(newMsg)
 				if err != nil {
 					log.Println("error sending community msg")
@@ -167,16 +168,16 @@ func updateHandler(
 
 		// send message to community users
 		if output.MessageToCommunity != nil {
-			communityUsers, err := sessionItem.SListAPI.GetUsersByComunityID(*sessionItem.User.ComunityId)
+			communityUsers, err := sessionItem.SListAPI.GetUsersByComunityID(sessionItem.User.ComunityID)
 			if err != nil {
 				sendErrorMessage(bot, update, err)
 			}
 
 			for _, user := range communityUsers {
-				if *user.TelegramId == *sessionItem.User.TelegramId {
+				if user.TelegramID == sessionItem.User.TelegramID {
 					continue
 				}
-				newMsg := tgbotapi.NewMessage(*user.ChatId, *output.MessageToCommunity)
+				newMsg := tgbotapi.NewMessage(user.ChatID, *output.MessageToCommunity)
 				_, err := bot.Send(newMsg)
 				if err != nil {
 					log.Println("error sending community msg")
@@ -244,7 +245,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	sessionStorage := session.NewSessionStorage(serviceURI, startToken, bot)
+	// get ent
+	e := getEnt()
+
+	sessionStorage := session.NewSessionStorage(serviceURI, startToken, bot, e)
 
 	bugetStorage, err := bugetstorage.NewStorage()
 	if err != nil {
@@ -267,4 +271,15 @@ func main() {
 	for update := range updates {
 		go updateHandler(update, sessionStorage, appLogic, bot, startNode)
 	}
+}
+
+func getEnt() *ent.Client {
+	dbFullFileName := viper.GetString("SHOPLIST-BOT_SHOPLISTTPATH")
+
+	client, err := ent.Open("sqlite3", dbFullFileName+"?_fk=1")
+	if err != nil {
+		log.Fatalf("failed opening connection to sqlite: %v", err)
+	}
+
+	return client
 }

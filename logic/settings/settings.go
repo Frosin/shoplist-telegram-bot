@@ -52,9 +52,9 @@ func (s *settings) SetSession(sessionItem *session.SessionItem) {
 
 func (s *settings) getStartPage(withMessage string) (logic.Output, error) {
 	//debug
-	log.Printf("curItem: sAPI=%v, userID=%v, communityID=%v", s.sessionItem.SListAPI, *s.sessionItem.User.Id, *s.sessionItem.User.ComunityId)
+	log.Printf("curItem: sAPI=%v, userID=%v, communityID=%v", s.sessionItem.SListAPI, s.sessionItem.User.ID, s.sessionItem.User.ComunityID)
 	//
-	comunityUsers, err := s.sessionItem.SListAPI.GetUsersByComunityID(*s.sessionItem.User.ComunityId)
+	comunityUsers, err := s.sessionItem.SListAPI.GetUsersByComunityID(s.sessionItem.User.ComunityID)
 	if err != nil {
 		return logic.Output{}, err
 	}
@@ -65,16 +65,16 @@ func (s *settings) getStartPage(withMessage string) (logic.Output, error) {
 	}
 
 	version := viper.GetString("SHOPLIST-BOT_SERVICE_VERSION")
-	message := fmt.Sprintf("%s%s: \"%v\".", versionText+version, IDUserText, *s.sessionItem.User.TelegramId)
+	message := fmt.Sprintf("%s%s: \"%v\".", versionText+version, IDUserText, s.sessionItem.User.TelegramID)
 	switch {
 	case comunityUsersCount > 1:
 		users := []string{}
 		for _, v := range comunityUsers {
 			userName := "no username"
-			if *v.TelegramUsername != "" {
-				userName = *v.TelegramUsername
+			if v.TelegramUsername != "" {
+				userName = v.TelegramUsername
 			}
-			user := fmt.Sprintf("ID=%v(%s)", *v.TelegramId, userName)
+			user := fmt.Sprintf("ID=%v(%s)", v.TelegramID, userName)
 			users = append(users, user)
 		}
 		message += fmt.Sprintf(
@@ -110,7 +110,7 @@ func (s *settings) GetCallbackOutput(command string) (logic.Output, error) {
 		// leave comunity handler
 		newComunityID := uniuri.New()
 		err := s.sessionItem.SListAPI.UpdateUser(
-			*s.sessionItem.User.Id,
+			s.sessionItem.User.ID,
 			&newComunityID,
 			nil,
 		)
@@ -118,14 +118,14 @@ func (s *settings) GetCallbackOutput(command string) (logic.Output, error) {
 			return logic.Output{}, err
 		}
 		// update in session
-		s.sessionItem.User.ComunityId = &newComunityID
+		s.sessionItem.User.ComunityID = newComunityID
 		return s.getStartPage(LeaveSuccessText)
 	}
 	return s.getStartPage("")
 }
 
 func (s *settings) GetMessageOutput(curData string, msg string) (logic.Output, error) {
-	comunityUsers, err := s.sessionItem.SListAPI.GetUsersByComunityID(*s.sessionItem.User.ComunityId)
+	comunityUsers, err := s.sessionItem.SListAPI.GetUsersByComunityID(s.sessionItem.User.ComunityID)
 	if err != nil {
 		return logic.Output{}, err
 	}
@@ -149,14 +149,14 @@ func (s *settings) GetMessageOutput(curData string, msg string) (logic.Output, e
 
 	// update user comunityID
 	err = s.sessionItem.SListAPI.UpdateUser(
-		*s.sessionItem.User.Id,
-		groupOwner.ComunityId,
+		s.sessionItem.User.ID,
+		&groupOwner.ComunityID,
 		nil,
 	)
 	if err != nil {
 		return logic.Output{}, err
 	}
 	// update in session
-	s.sessionItem.User.ComunityId = groupOwner.ComunityId
+	s.sessionItem.User.ComunityID = groupOwner.ComunityID
 	return s.getStartPage(JoinGroupSuccessText)
 }

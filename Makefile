@@ -12,3 +12,5 @@ abot:
 	docker exec -it shoplist_bot /bin/sh -c "[ -e /bin/bash ] && /bin/bash || /bin/sh"
 ashop:
 	docker exec -it shoplist_server /bin/sh -c "[ -e /bin/bash ] && /bin/bash || /bin/sh"
+gen:
+	ent generate ./internal/shoplist/ent/schema
