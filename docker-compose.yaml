@@ -1,24 +1,6 @@
-
 version: '3.7'
 
 services:
-  shoplist:
-    image: shoplist_shoplist
-
-    environment:
-      - SHOPLIST_API_VERSION=0.0.1
-      - SHOPLIST_DB_PATH=db
-      - SHOPLIST_DB_FILE_NAME=shoplist.db
-      - SHOPLIST_SENTRY_DSN=https://70d91cb8123d4b149c225c315849f53c@sentry.io/1840045
-    container_name: shoplist_server
-    networks:
-      - shoplist
-    ports:
-     - 8081
-    tty: true
-    restart: unless-stopped
-    volumes:
-      - ./db:/go/src/github.com/Frosin/shoplist-api-client-go/cmd/shoplist/db
   bot:
     build:
       context: ./
@@ -27,12 +9,13 @@ services:
     networks:
       - shoplist
     ports:
-     - 443:443
+      - 443:443
     tty: true
     restart: unless-stopped
     volumes:
-      - ./db/buget.db:/go/src/github.com/Frosin/shoplist-telegram-bot/buget.db
-    
+      - ./db/buget.db:/go/src/github.com/Frosin/shoplist-telegram-bot/db/buget.db
+      - ./db/shoplist.db:/go/src/github.com/Frosin/shoplist-telegram-bot/db/shoplist.db
+
 networks:
   shoplist:
     external: true
