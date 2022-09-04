@@ -42,6 +42,9 @@ func NewShoplistAPI(e *ent.Client, token string) *Shoplist {
 }
 
 func (s *Shoplist) GetUserByTelegramID(telegramID int) (*ent.User, error) {
+
+	log.Info("METHOD GetUserByTelegramID")
+
 	ctx, cancel := context.WithTimeout(context.Background(), consts.ReadTimeout)
 	defer cancel()
 
@@ -59,6 +62,8 @@ func (s *Shoplist) GetUserByTelegramID(telegramID int) (*ent.User, error) {
 }
 
 func (s *Shoplist) GetUsersByComunityID(comunityID string) ([]*ent.User, error) {
+	log.Info("METHOD GetUsersByComunityID")
+
 	ctx, cancel := context.WithTimeout(context.Background(), consts.ReadTimeout)
 	defer cancel()
 
@@ -76,6 +81,8 @@ func (s *Shoplist) GetUsersByComunityID(comunityID string) ([]*ent.User, error) 
 }
 
 func (s *Shoplist) CreateUser(userID int, chatID int64, username string) (*ent.User, error) {
+	log.Info("METHOD CreateUser")
+
 	ctx, cancel := context.WithTimeout(context.Background(), consts.ReadTimeout)
 	defer cancel()
 
@@ -101,6 +108,9 @@ func (s *Shoplist) CreateUser(userID int, chatID int64, username string) (*ent.U
 }
 
 func (s *Shoplist) UpdateUser(userID int, comunityID, userName *string) error {
+
+	log.Info("METHOD UpdateUser")
+
 	ctx, cancel := context.WithTimeout(context.Background(), consts.ReadTimeout)
 	defer cancel()
 
@@ -128,6 +138,8 @@ func (s *Shoplist) UpdateUser(userID int, comunityID, userName *string) error {
 }
 
 func (s *Shoplist) UserInit(telegramUserID int, chatID int64, userName string) (*ent.User, error) {
+
+	log.Info("METHOD UserInit")
 	user, err := s.GetUserByTelegramID(telegramUserID)
 
 	switch {
@@ -144,6 +156,8 @@ func (s *Shoplist) UserInit(telegramUserID int, chatID int64, userName string) (
 }
 
 func (s *Shoplist) getCommunityUsers() (int, []int, error) {
+	log.Info("METHOD getCommunityUsers")
+
 	ctx, cancel := context.WithTimeout(context.Background(), consts.ReadTimeout)
 	defer cancel()
 	// get user by token
@@ -174,6 +188,8 @@ func (s *Shoplist) getCommunityUsers() (int, []int, error) {
 
 //GetShoppingDays returns days with shoppings by date params
 func (s *Shoplist) GetShoppingDays(time time.Time) ([]int, error) {
+	log.Info("METHOD GetShoppingDays")
+
 	ctx, cancel := context.WithTimeout(context.Background(), consts.ReadTimeout)
 	defer cancel()
 
@@ -215,6 +231,8 @@ func (s *Shoplist) GetShoppingDays(time time.Time) ([]int, error) {
 }
 
 func (s *Shoplist) GetShoppingsByDay(sDay time.Time) ([]*ent.Shopping, error) {
+	log.Info("METHOD GetShoppingsByDay")
+
 	ctx, cancel := context.WithTimeout(context.Background(), consts.ReadTimeout)
 	defer cancel()
 
@@ -259,6 +277,8 @@ func (s *Shoplist) GetShoppingsByDay(sDay time.Time) ([]*ent.Shopping, error) {
 }
 
 func (s *Shoplist) GetShoppingItems(shoppingID int) ([]*ent.Item, error) {
+	log.Info("METHOD GetShoppingItems")
+
 	ctx, cancel := context.WithTimeout(context.Background(), consts.ReadTimeout)
 	defer cancel()
 
@@ -277,6 +297,8 @@ func (s *Shoplist) GetShoppingItems(shoppingID int) ([]*ent.Item, error) {
 }
 
 func (s *Shoplist) GetShopping(ID int) (*ent.Shopping, error) {
+	log.Info("METHOD GetShopping")
+
 	ctx, cancel := context.WithTimeout(context.Background(), consts.ReadTimeout)
 	defer cancel()
 
@@ -305,6 +327,8 @@ func (s *Shoplist) GetShopping(ID int) (*ent.Shopping, error) {
 }
 
 func (s *Shoplist) GetSpecialShopping(sType consts.ShoppingType) (int, error) {
+	log.Info("METHOD GetSpecialShopping")
+
 	ctx, cancel := context.WithTimeout(context.Background(), consts.ReadTimeout)
 	defer cancel()
 
@@ -335,6 +359,8 @@ func (s *Shoplist) GetSpecialShopping(sType consts.ShoppingType) (int, error) {
 }
 
 func (s *Shoplist) AddItem(shoppingID int, itemName string) error {
+	log.Info("METHOD AddItem")
+
 	ctx, cancel := context.WithTimeout(context.Background(), consts.WriteTimeout)
 	defer cancel()
 
@@ -366,6 +392,8 @@ func (s *Shoplist) AddItem(shoppingID int, itemName string) error {
 }
 
 func (s *Shoplist) RemoveItems(items []int) error {
+	log.Info("METHOD RemoveItems")
+
 	ctx, cancel := context.WithTimeout(context.Background(), consts.WriteTimeout)
 	defer cancel()
 
@@ -378,6 +406,8 @@ func (s *Shoplist) RemoveItems(items []int) error {
 }
 
 func (s *Shoplist) AddShoppingWithType(day time.Time, shopName string, shoppingType consts.ShoppingType) (int, error) {
+	log.Info("METHOD AddShoppingWithType")
+
 	ctx, cancel := context.WithTimeout(context.Background(), consts.WriteTimeout)
 	defer cancel()
 
@@ -432,6 +462,8 @@ func (s *Shoplist) AddShoppingWithType(day time.Time, shopName string, shoppingT
 }
 
 func (s *Shoplist) AddShopping(day time.Time, shopName string) error {
+	log.Info("METHOD AddShopping")
+
 	_, err := s.AddShoppingWithType(day, shopName, consts.ShoppingTypeDefault)
 	return err
 }

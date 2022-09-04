@@ -8,6 +8,7 @@ import (
 
 	"entgo.io/ent/dialect"
 	"github.com/Frosin/shoplist-telegram-bot/internal/shoplist/ent"
+	"github.com/Frosin/shoplist-telegram-bot/internal/shoplist/ent/shopping"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -23,6 +24,8 @@ func main() {
 
 	shops, err := client.Shopping.
 		Query().
+		WithShop().
+		Where(shopping.IDEQ(8589934733)).
 		All(ctx)
 
 	if err != nil {
