@@ -37,7 +37,7 @@ func (c *checklist) SetSession(sessionItem *session.SessionItem) {
 }
 
 func (c *checklist) GetCallbackOutput(command string) (logic.Output, error) {
-	var checklistShoppingID *int
+	var checklistShoppingID int
 	var err error
 
 	// if first start of checklist page we will get checklist shoppingID
@@ -61,7 +61,7 @@ func (c *checklist) GetCallbackOutput(command string) (logic.Output, error) {
 		}
 
 		parseObject := helpers.ParseResult{
-			ShoppingID: *checklistShoppingID,
+			ShoppingID: checklistShoppingID,
 		}
 
 		return c.getOutput(&parseObject, "", nil)
@@ -91,6 +91,9 @@ func (c *checklist) GetCallbackOutput(command string) (logic.Output, error) {
 			//remove items and get output
 			selectItems := c.sessionItem.GetDataAsArray()
 			err = c.sessionItem.SListAPI.RemoveItems(selectItems)
+			if err != nil {
+				return logic.Output{}, err
+			}
 			// delete items
 			c.sessionItem.ClearDataArray()
 
@@ -102,8 +105,8 @@ func (c *checklist) GetCallbackOutput(command string) (logic.Output, error) {
 				return logic.Output{}, fmt.Errorf("%v: %w", consts.ChecklistWord, err)
 			}
 			arItemIDs := []int{}
-			for _, v := range *checklistItems {
-				arItemIDs = append(arItemIDs, *v.Id)
+			for _, v := range checklistItems {
+				arItemIDs = append(arItemIDs, v.ID)
 			}
 			c.sessionItem.SetDataArrayValue(arItemIDs)
 		case consts.TypeOperationCopy:
@@ -128,14 +131,14 @@ func (c *checklist) GetCallbackOutput(command string) (logic.Output, error) {
 				return logic.Output{}, err
 			}
 			// get currentlist items
-			currentlistItems, err := c.sessionItem.SListAPI.GetShoppingItems(*currentlistShoppingID)
+			currentlistItems, err := c.sessionItem.SListAPI.GetShoppingItems(currentlistShoppingID)
 			if err != nil {
 				return logic.Output{}, fmt.Errorf("%v: %w", consts.ChecklistWord, err)
 			}
 			//add checklist items to current list with check of duplicates
 
 			alreadyExist := func(itemName string) bool {
-				for _, currentlistItem := range *currentlistItems {
+				for _, currentlistItem := range currentlistItems {
 					if itemName == currentlistItem.ProductName {
 						return true
 					}
@@ -154,8 +157,8 @@ func (c *checklist) GetCallbackOutput(command string) (logic.Output, error) {
 			}
 
 			itemsToAdd := []string{}
-			for _, checklistItem := range *checklistItems {
-				if alreadyExist(checklistItem.ProductName) || notSelected(*checklistItem.Id) {
+			for _, checklistItem := range checklistItems {
+				if alreadyExist(checklistItem.ProductName) || notSelected(checklistItem.ID) {
 					continue
 				}
 				itemsToAdd = append(itemsToAdd, checklistItem.ProductName)
@@ -163,7 +166,7 @@ func (c *checklist) GetCallbackOutput(command string) (logic.Output, error) {
 
 			if len(itemsToAdd) > 0 {
 				for _, item := range itemsToAdd {
-					err = c.sessionItem.SListAPI.AddItem(*currentlistShoppingID, item)
+					err = c.sessionItem.SListAPI.AddItem(currentlistShoppingID, item)
 					if err != nil {
 						return logic.Output{}, fmt.Errorf("%v: %w", consts.ChecklistWord, err)
 					}
@@ -194,7 +197,7 @@ func (c *checklist) GetMessageOutput(curData string, msg string) (logic.Output, 
 		}
 
 		result = &helpers.ParseResult{
-			ShoppingID: *checklistShoppingID,
+			ShoppingID: checklistShoppingID,
 		}
 	} else {
 		result, err = helpers.ParseCommand(curData)
@@ -254,11 +257,11 @@ func (c *checklist) getOutput(parseObject *helpers.ParseResult, additionalMessag
 	column := [][]tgbotapi.InlineKeyboardButton{}
 
 	// create items list to show
-	for i, data := range *items {
-		itemIDStr := strconv.Itoa(*data.Id)
+	for i, data := range items {
+		itemIDStr := strconv.Itoa(data.ID)
 		itemName := data.ProductName
 		// underlined item name
-		if helpers.IsInArray(*data.Id, selectedItems) {
+		if helpers.IsInArray(data.ID, selectedItems) {
 			itemName = helpers.GetUnderlinedText(itemName)
 		}
 
@@ -282,7 +285,7 @@ func (c *checklist) getOutput(parseObject *helpers.ParseResult, additionalMessag
 		column = append(column, row)
 	}
 
-	if len(*items) > 0 {
+	if len(items) > 0 {
 		// select all button
 		selectAllButton := tgbotapi.NewInlineKeyboardButtonData(selectAllMsg,
 			helpers.GetParam(
@@ -326,10 +329,10 @@ func (c *checklist) getOutput(parseObject *helpers.ParseResult, additionalMessag
 	if addedItems != nil {
 		msg := fmt.Sprintf(
 			"Пользователь %s(%v) добавил '%s' в '%s'(%s)",
-			*c.sessionItem.User.TelegramUsername,
-			*c.sessionItem.User.TelegramId,
+			c.sessionItem.User.TelegramUsername,
+			c.sessionItem.User.TelegramID,
 			*addedItems,
-			shoppingData.Name,
+			shoppingData.Edges.Shop.Name,
 			shoppingData.Date,
 		)
 		output.MessageToCommunity = &msg

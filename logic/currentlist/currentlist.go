@@ -33,7 +33,7 @@ func (c *currentlist) SetSession(sessionItem *session.SessionItem) {
 }
 
 func (c *currentlist) GetCallbackOutput(command string) (logic.Output, error) {
-	var currentlistShoppingID *int
+	var currentlistShoppingID int
 	var err error
 
 	// if first start of current page
@@ -55,7 +55,7 @@ func (c *currentlist) GetCallbackOutput(command string) (logic.Output, error) {
 		}
 
 		parseObject := helpers.ParseResult{
-			ShoppingID: *currentlistShoppingID,
+			ShoppingID: currentlistShoppingID,
 		}
 
 		return c.getOutput(&parseObject, nil)
@@ -85,6 +85,9 @@ func (c *currentlist) GetCallbackOutput(command string) (logic.Output, error) {
 			//remove items and get output
 			selectItems := c.sessionItem.GetDataAsArray()
 			err = c.sessionItem.SListAPI.RemoveItems(selectItems)
+			if err != nil {
+				return logic.Output{}, err
+			}
 			// delete items
 			c.sessionItem.ClearDataArray()
 
@@ -107,7 +110,7 @@ func (c *currentlist) GetMessageOutput(curData string, msg string) (logic.Output
 		}
 
 		result = &helpers.ParseResult{
-			ShoppingID: *currentlistShoppingID,
+			ShoppingID: currentlistShoppingID,
 		}
 	} else {
 		result, err = helpers.ParseCommand(curData)
@@ -158,11 +161,11 @@ func (c *currentlist) getOutput(parseObject *helpers.ParseResult, addedItemName 
 	column := [][]tgbotapi.InlineKeyboardButton{}
 
 	// create items list to show
-	for i, data := range *items {
-		itemIDStr := strconv.Itoa(*data.Id)
+	for i, data := range items {
+		itemIDStr := strconv.Itoa(data.ID)
 		itemName := data.ProductName
 		// strikethrough item name
-		if helpers.IsInArray(*data.Id, selectedItems) {
+		if helpers.IsInArray(data.ID, selectedItems) {
 			itemName = helpers.GetStrikeThroughText(itemName)
 		}
 
@@ -206,10 +209,10 @@ func (c *currentlist) getOutput(parseObject *helpers.ParseResult, addedItemName 
 	if addedItemName != nil {
 		msg := fmt.Sprintf(
 			"Пользователь %s(%v) добавил '%s' в '%s'(%s)",
-			*c.sessionItem.User.TelegramUsername,
-			*c.sessionItem.User.TelegramId,
+			c.sessionItem.User.TelegramUsername,
+			c.sessionItem.User.TelegramID,
 			*addedItemName,
-			shoppingData.Name,
+			shoppingData.Edges.Shop.Name,
 			shoppingData.Date,
 		)
 		output.MessageToCommunity = &msg

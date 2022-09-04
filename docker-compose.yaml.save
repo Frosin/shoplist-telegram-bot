@@ -1,9 +1,10 @@
-
 version: '3.7'
 
 services:
   shoplist:
-    image: shoplist_shoplist
+   # image: shoplist_shoplist    build:
+      context: ./
+      dockerfile: Dockerfile_shoplist
 
     environment:
       - SHOPLIST_API_VERSION=0.0.1

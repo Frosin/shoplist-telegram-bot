@@ -8,10 +8,9 @@ import (
 
 	"github.com/Frosin/shoplist-telegram-bot/consts"
 	"github.com/Frosin/shoplist-telegram-bot/helpers"
+	"github.com/Frosin/shoplist-telegram-bot/internal/shoplist/ent"
 	"github.com/Frosin/shoplist-telegram-bot/logic"
 	"github.com/Frosin/shoplist-telegram-bot/session"
-
-	"github.com/Frosin/shoplist-api-client-go/client"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
@@ -52,20 +51,20 @@ func getToCalendarKeyboard(day time.Time) *tgbotapi.InlineKeyboardMarkup {
 	}
 }
 
-func getButtonsByData(sList *[]client.ShoppingWithId, day time.Time) *tgbotapi.InlineKeyboardMarkup {
+func getButtonsByData(sList []*ent.Shopping, day time.Time) *tgbotapi.InlineKeyboardMarkup {
 	column := [][]tgbotapi.InlineKeyboardButton{}
 
-	for i, sh := range *sList {
+	for i, sh := range sList {
 		//debug
-		fmt.Println("\n shopping=", *sh.Id)
+		fmt.Println("\n shopping=", sh.ID)
 		fmt.Println("\n shopping=", sh)
 		//
 		param := helpers.GetParam(
 			consts.ShoppingitemsWord,
-			strconv.Itoa(*sh.Id),
+			strconv.Itoa(sh.ID),
 		)
 		row := []tgbotapi.InlineKeyboardButton{
-			tgbotapi.NewInlineKeyboardButtonData(strconv.Itoa(i+1)+". "+sh.Name, param),
+			tgbotapi.NewInlineKeyboardButtonData(strconv.Itoa(i+1)+". "+sh.Edges.Shop.Name, param),
 		}
 		column = append(column, row)
 	}
@@ -101,7 +100,7 @@ func (d *dayshoppings) getOutput(day time.Time) (logic.Output, error) {
 
 	return logic.Output{
 		Message:  getMsg(dayshoppingsText),
-		Keyboard: getButtonsByData(&sList, day),
+		Keyboard: getButtonsByData(sList, day),
 	}, nil
 }
 
