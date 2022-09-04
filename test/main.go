@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math"
 	"time"
 
 	"entgo.io/ent/dialect"
@@ -21,6 +22,8 @@ func main() {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
 	defer cancel()
+
+	log.Println("maxint=", math.MaxInt)
 
 	shops, err := client.Shopping.
 		Query().
