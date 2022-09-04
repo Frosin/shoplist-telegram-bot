@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"strings"
@@ -15,7 +14,6 @@ import (
 	"github.com/Frosin/shoplist-telegram-bot/consts"
 	"github.com/Frosin/shoplist-telegram-bot/helpers"
 	"github.com/Frosin/shoplist-telegram-bot/internal/shoplist/ent"
-	"github.com/Frosin/shoplist-telegram-bot/internal/shoplist/ent/shopping"
 	"github.com/Frosin/shoplist-telegram-bot/logic"
 	"github.com/Frosin/shoplist-telegram-bot/logic/buget"
 	"github.com/Frosin/shoplist-telegram-bot/logic/bugetcategory"
@@ -286,20 +284,6 @@ func getEnt() *ent.Client {
 	if err != nil {
 		log.Fatalf("failed opening connection to sqlite: %v", err)
 	}
-
-	// debug
-	shops, err := client.Shopping.
-		Query().
-		WithShop().
-		Where(shopping.IDEQ(8589934733)).
-		All(context.Background())
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	log.Println("shop=", shops)
-	//
 
 	return client
 }
