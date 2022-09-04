@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math"
 	"time"
 
 	"entgo.io/ent/dialect"
@@ -22,9 +23,10 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
 	defer cancel()
 
-	//log.Println("maxint=", math.MaxInt)
+	log.Println("maxint=", math.MaxInt32)
 
-	var id int = 8589934733
+	//2147483647
+	var id int = 8589934593 //8589934733
 
 	shops, err := client.Shopping.
 		Query().
