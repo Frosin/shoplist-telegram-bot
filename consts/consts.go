@@ -23,6 +23,7 @@ const (
 	CurrentListStart   = "currentlist_start"
 	BugetStart         = "buget_start"
 	BugetCategoryStart = "bugetcategory_start"
+	IOTStart           = "iot_start"
 
 	CalendarWord      = "calendar"
 	DayshoppingsWord  = "dayshoppings"

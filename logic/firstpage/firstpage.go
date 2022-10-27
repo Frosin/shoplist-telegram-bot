@@ -58,7 +58,7 @@ func getButtons() *tgbotapi.InlineKeyboardMarkup {
 			{tgbotapi.NewInlineKeyboardButtonData(settings, consts.SettingsStart)},
 			{tgbotapi.NewInlineKeyboardButtonData(calendar, consts.CalendarStart)},
 			{tgbotapi.NewInlineKeyboardButtonData(buget, consts.BugetStart)},
-			{tgbotapi.NewInlineKeyboardButtonData(iot, consts.IOTWord)},
+			{tgbotapi.NewInlineKeyboardButtonData(iot, consts.IOTStart)},
 		},
 	}
 }

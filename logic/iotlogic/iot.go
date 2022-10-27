@@ -16,11 +16,7 @@ import (
 )
 
 const (
-	iotTxt = `Бюджет: '%s', освоение: %d%%, остаток %d
-	Пример добавления категории: "25000 продукты"
-	Пример добавления бюджета: "!Июнь"`
-	backText   = "⬅ Назад"
-	emptyItems = "Нет категорий для отоброжения"
+	backText = "⬅ Назад"
 )
 
 var (
@@ -63,7 +59,7 @@ func (c *iotLogic) getOutput() (logic.Output, error) {
 		tgbotapi.NewInlineKeyboardButtonData(backText, consts.FirstPageStart),
 	}
 	out := logic.Output{
-		Message: emptyItems,
+		Message: c.getValuesText(),
 		Keyboard: &tgbotapi.InlineKeyboardMarkup{
 			InlineKeyboard: [][]tgbotapi.InlineKeyboardButton{
 				controlButtons,

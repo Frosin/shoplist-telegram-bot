@@ -23,7 +23,7 @@ const (
 	dateLayout           = "02.01.2006 15:04"
 	backText             = "⬅ Назад"
 	newbugetCategoryText = "*** Создать новый ***"
-	emptyItems           = "Нет категорий для отоброжения"
+	emptyItems           = "Нет категорий для отображения"
 
 	catText = "Категория: %s освоение %d%% (%d/%d):\n"
 )
