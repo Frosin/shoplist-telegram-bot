@@ -51,8 +51,8 @@ func (s *Server) StartServer() {
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-		if err := http.ListenAndServe(":"+s.port, nil); err != nil && err != http.ErrServerClosed {
-			log.Println("listen: %s\n", err)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Printf("listen: %s\n", err)
 		}
 	}()
 	log.Print("IOT Server Started")
