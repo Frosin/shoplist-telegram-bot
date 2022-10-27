@@ -9,7 +9,7 @@ User=pi
 Group=pi
 WorkingDirectory=/home/pi/SHOPLIST/
 ExecStart=/home/pi/SHOPLIST/shoplist-telegram-bot
-StandardOutput=file:/home/pi/SHOPLIST/shoplist.log
+StandardOutput=file:/home/pi/shoplist.log
 Restart=always
 RestartSec=30
 
