@@ -16,6 +16,7 @@ const (
 	settings  = "Настройки"
 	calendar  = "Календарь"
 	buget     = "Бюджет"
+	iot       = "iot"
 
 	CurListCmd   = "curlist"
 	CheckListCmd = "checklist"
@@ -57,6 +58,7 @@ func getButtons() *tgbotapi.InlineKeyboardMarkup {
 			{tgbotapi.NewInlineKeyboardButtonData(settings, consts.SettingsStart)},
 			{tgbotapi.NewInlineKeyboardButtonData(calendar, consts.CalendarStart)},
 			{tgbotapi.NewInlineKeyboardButtonData(buget, consts.BugetStart)},
+			{tgbotapi.NewInlineKeyboardButtonData(iot, consts.IOTWord)},
 		},
 	}
 }
