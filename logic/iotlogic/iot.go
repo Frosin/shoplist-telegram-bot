@@ -21,7 +21,7 @@ const (
 
 var (
 	timeout = time.Second * 5
-	limit   = 20
+	limit   = 40
 )
 
 type iotLogic struct {
@@ -82,8 +82,10 @@ func (c *iotLogic) getValuesText() string {
 	}
 
 	for param, values := range dayValues {
-		limited := values[len(values)-limit:]
-		dayValues[param] = limited
+		if len(values) > limit {
+			limited := values[len(values)-limit:]
+			dayValues[param] = limited
+		}
 	}
 
 	prepared := map[string][]string{}
