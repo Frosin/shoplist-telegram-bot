@@ -20,13 +20,14 @@ type Server struct {
 func NewServer(storage IOTStorage, port string) *Server {
 	return &Server{
 		storage: storage,
+		port:    port,
 	}
 }
 
 func (s *Server) hello(w http.ResponseWriter, req *http.Request) {
 	values := req.URL.Query()
 
-	log.Println("server got values:", values)
+	log.Println("IOT server got values:", values)
 
 	for key, v := range values {
 		if len(v) == 0 {
@@ -52,7 +53,7 @@ func (s *Server) StartServer() {
 
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Printf("listen: %s\n", err)
+			log.Printf("IOT listen: %s\n", err)
 		}
 	}()
 	log.Print("IOT Server Started")
@@ -66,8 +67,8 @@ func (s *Server) StartServer() {
 	}()
 
 	if err := srv.Shutdown(ctx); err != nil {
-		log.Fatalf("Server Shutdown Failed:%+v", err)
+		log.Fatalf("IOT Server Shutdown Failed:%+v", err)
 	}
-	log.Fatal("Server Exited Properly")
+	log.Fatal("IOT Server Exited Properly")
 
 }
