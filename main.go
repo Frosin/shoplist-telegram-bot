@@ -14,6 +14,7 @@ import (
 	"github.com/Frosin/shoplist-telegram-bot/consts"
 	"github.com/Frosin/shoplist-telegram-bot/helpers"
 	"github.com/Frosin/shoplist-telegram-bot/internal/shoplist/ent"
+	"github.com/Frosin/shoplist-telegram-bot/iot"
 	"github.com/Frosin/shoplist-telegram-bot/logic"
 	"github.com/Frosin/shoplist-telegram-bot/logic/buget"
 	"github.com/Frosin/shoplist-telegram-bot/logic/bugetcategory"
@@ -22,6 +23,7 @@ import (
 	"github.com/Frosin/shoplist-telegram-bot/logic/currentlist"
 	"github.com/Frosin/shoplist-telegram-bot/logic/dayshoppings"
 	"github.com/Frosin/shoplist-telegram-bot/logic/firstpage"
+	"github.com/Frosin/shoplist-telegram-bot/logic/iotlogic"
 	"github.com/Frosin/shoplist-telegram-bot/logic/settings"
 	"github.com/Frosin/shoplist-telegram-bot/logic/shoppingitems"
 	"github.com/Frosin/shoplist-telegram-bot/session"
@@ -233,13 +235,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	//_, err = bot.SetWebhook(tgbotapi.NewWebhookWithCert(webhookURL+bot.Token, "cert.pem"))
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// updates := bot.ListenForWebhook("/" + bot.Token)
-	// go http.ListenAndServeTLS("0.0.0.0:"+port, "cert.pem", "key.pem", nil)
-
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 
@@ -247,6 +242,11 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	iotStorage := iot.NewIOTStorageMap()
+
+	srv := iot.NewServer(iotStorage, "8090")
+	go srv.StartServer()
 
 	// get ent
 	e := getEnt()
@@ -268,7 +268,8 @@ func main() {
 		AddNode(consts.ChecklistWord, checklist.New()).
 		AddNode(consts.CurrentlistWord, currentlist.New()).
 		AddNode(consts.BugetWord, buget.New(bugetStorage)).
-		AddNode(consts.BugetCategoryWord, bugetcategory.New(bugetStorage))
+		AddNode(consts.BugetCategoryWord, bugetcategory.New(bugetStorage)).
+		AddNode(consts.IOTWord, iotlogic.New(iotStorage))
 
 	log.Println("start updates")
 	for update := range updates {

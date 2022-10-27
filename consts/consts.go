@@ -32,6 +32,7 @@ const (
 	CurrentlistWord   = "currentlist"
 	BugetWord         = "buget"
 	BugetCategoryWord = "bugetcategory"
+	IOTWord           = "iot"
 
 	Start = "start"
 

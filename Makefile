@@ -14,3 +14,9 @@ ashop:
 	docker exec -it shoplist_server /bin/sh -c "[ -e /bin/bash ] && /bin/bash || /bin/sh"
 gen:
 	ent generate ./internal/shoplist/ent/schema
+deploy:
+	sudo systemctl stop shoplist
+	cp ./shoplist.service /etc/systemd/system/shoplist.service
+	systemctl enable shoplist
+	systemctl start shoplist
+	systemctl -l status shoplist

@@ -11,6 +11,7 @@ require (
 	github.com/getsentry/sentry-go v0.5.1
 	github.com/go-telegram-bot-api/telegram-bot-api v4.6.4+incompatible
 	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
+	github.com/gorilla/mux v1.6.2
 	github.com/jmoiron/sqlx v1.3.4
 	github.com/kr/pretty v0.2.0 // indirect
 	github.com/labstack/echo/v4 v4.1.14 // indirect
