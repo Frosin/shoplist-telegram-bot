@@ -21,7 +21,7 @@ const (
 
 var (
 	timeout = time.Second * 5
-	limit   = 40
+	limit   = 20
 )
 
 type iotLogic struct {
@@ -88,17 +88,12 @@ func (c *iotLogic) getValuesText() string {
 		}
 	}
 
-	prepared := map[string][]string{}
-
 	for param, limited := range dayValues {
 		for _, value := range limited {
-			paramString := fmt.Sprintf("%s=%v", param, value.Value)
-			prepared[value.Time.Format(iot.TimeLayout)] = append(prepared[value.Time.Format(iot.TimeLayout)], paramString)
+			paramString := fmt.Sprintf("%s: %s=%v", value.Time.Format(iot.TimeLayout), param, value.Value)
+			bld.WriteString(paramString)
 		}
 	}
 
-	for ts, strs := range prepared {
-		bld.WriteString(ts + ":" + strings.Join(strs, ",") + "\n")
-	}
 	return bld.String()
 }
