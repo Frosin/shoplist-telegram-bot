@@ -90,9 +90,10 @@ func (c *iotLogic) getValuesText() string {
 
 	for param, limited := range dayValues {
 		for _, value := range limited {
-			paramString := fmt.Sprintf("%s: %s=%v", value.Time.Format(iot.TimeLayout), param, value.Value)
+			paramString := fmt.Sprintf("%s: %s=%v\n", value.Time.Format(iot.TimeLayout), param, value.Value)
 			bld.WriteString(paramString)
 		}
+		bld.WriteString("*************************\n")
 	}
 
 	return bld.String()
