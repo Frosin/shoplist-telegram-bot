@@ -16,6 +16,7 @@ type Output struct {
 	Message            string
 	Keyboard           *tgbotapi.InlineKeyboardMarkup
 	MessageToCommunity *string
+	Image              *tgbotapi.PhotoConfig
 }
 
 type Node interface {

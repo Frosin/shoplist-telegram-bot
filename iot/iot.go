@@ -9,13 +9,13 @@ const (
 
 type (
 	IOTStorage interface {
-		SaveValues(t time.Time, ID string, value interface{}) error
+		SaveValues(t time.Time, ID string, value float64) error
 		GetDayValues(t time.Time) (map[string][]StorageValue, error)
 	}
 
 	StorageValue struct {
 		Time  time.Time
-		Value interface{}
+		Value float64
 	}
 
 	IOTStorageMap struct {
@@ -29,7 +29,7 @@ func NewIOTStorageMap() IOTStorage {
 	}
 }
 
-func (s *IOTStorageMap) SaveValues(t time.Time, ID string, value interface{}) error {
+func (s *IOTStorageMap) SaveValues(t time.Time, ID string, value float64) error {
 	date := t.Format(DateLayout)
 	if s.Values[date] == nil {
 		s.Values[date] = make(map[string][]StorageValue)

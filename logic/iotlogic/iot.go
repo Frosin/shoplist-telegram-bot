@@ -1,15 +1,21 @@
 package iotlogic
 
 import (
-	"fmt"
+	"errors"
+	"io/ioutil"
 	"log"
-	"strings"
+	"os"
 	"time"
 
 	"github.com/Frosin/shoplist-telegram-bot/consts"
 	"github.com/Frosin/shoplist-telegram-bot/logic"
 	"github.com/Frosin/shoplist-telegram-bot/session"
+	"github.com/google/uuid"
 	"github.com/spf13/viper"
+	"gonum.org/v1/plot"
+	"gonum.org/v1/plot/plotter"
+	"gonum.org/v1/plot/plotutil"
+	"gonum.org/v1/plot/vg"
 
 	"github.com/Frosin/shoplist-telegram-bot/iot"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
@@ -21,7 +27,6 @@ const (
 
 var (
 	timeout = time.Second * 5
-	limit   = 20
 )
 
 type iotLogic struct {
@@ -48,6 +53,17 @@ func (c *iotLogic) GetMessageOutput(curData string, msg string) (logic.Output, e
 	return c.getOutput()
 }
 
+func newErrorOut(msg string, controlButtons []tgbotapi.InlineKeyboardButton) logic.Output {
+	return logic.Output{
+		Message: msg,
+		Keyboard: &tgbotapi.InlineKeyboardMarkup{
+			InlineKeyboard: [][]tgbotapi.InlineKeyboardButton{
+				controlButtons,
+			},
+		},
+	}
+}
+
 func (c *iotLogic) getOutput() (logic.Output, error) {
 	iotCommunity := viper.GetString("SHOPLIST-BUDGET_COMMUNITY")
 	if c.sessionItem.User.ComunityID != iotCommunity {
@@ -58,43 +74,83 @@ func (c *iotLogic) getOutput() (logic.Output, error) {
 	controlButtons := []tgbotapi.InlineKeyboardButton{
 		tgbotapi.NewInlineKeyboardButtonData(backText, consts.FirstPageStart),
 	}
+
+	name, err := c.generateGraph()
+	if err != nil {
+		return newErrorOut(err.Error(), controlButtons), nil
+	}
+
+	f, err := os.Open(name)
+	if err != nil {
+		return newErrorOut(err.Error(), controlButtons), nil
+	}
+	content, err := ioutil.ReadAll(f)
+
+	if err != nil {
+		return newErrorOut(err.Error(), controlButtons), nil
+	}
+
+	bytes := tgbotapi.FileBytes{Name: name, Bytes: content}
+	img := tgbotapi.NewPhotoUpload(c.sessionItem.ChatID, bytes)
+
 	out := logic.Output{
-		Message: c.getValuesText(),
+		Message: "values",
 		Keyboard: &tgbotapi.InlineKeyboardMarkup{
 			InlineKeyboard: [][]tgbotapi.InlineKeyboardButton{
 				controlButtons,
 			},
 		},
+		Image: &img,
 	}
+
 	return out, nil
 }
 
-func (c *iotLogic) getValuesText() string {
-	bld := strings.Builder{}
+func (c *iotLogic) generateGraph() (string, error) {
+	p := plot.New()
 
 	dayValues, err := c.storage.GetDayValues(time.Now())
 	if err != nil {
-		return err.Error()
+		return "", err
 	}
 
 	if len(dayValues) == 0 {
-		return "no new values"
+		return "", errors.New("no new values")
 	}
+
+	p.Title.Text = "values"
+	p.X.Label.Text = "time"
+	p.Y.Label.Text = "value"
 
 	for param, values := range dayValues {
-		if len(values) > limit {
-			limited := values[len(values)-limit:]
-			dayValues[param] = limited
+		xyValues := plotter.XYs{}
+		for _, value := range values {
+			xyValues = append(xyValues, plotter.XY{
+				X: timeToFloat(value.Time),
+				Y: value.Value,
+			})
+		}
+
+		err := plotutil.AddLinePoints(p,
+			param, xyValues,
+		)
+		if err != nil {
+			return "", err
 		}
 	}
 
-	for param, limited := range dayValues {
-		for _, value := range limited {
-			paramString := fmt.Sprintf("%s: %s=%v\n", value.Time.Format(iot.TimeLayout), param, value.Value)
-			bld.WriteString(paramString)
-		}
-		bld.WriteString("*************************\n")
+	name := uuid.New().String() + ".png"
+
+	// Save the plot to a PNG file.
+	if err := p.Save(4*vg.Inch, 3*vg.Inch, name); err != nil {
+		return "", err
 	}
 
-	return bld.String()
+	return name, nil
+}
+
+func timeToFloat(t time.Time) float64 {
+	beforeDot := float64(t.Hour())
+	afterDot := float64((t.Minute()*100)/60) / 100
+	return beforeDot + afterDot
 }

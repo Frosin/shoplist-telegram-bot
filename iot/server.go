@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -35,7 +36,12 @@ func (s *Server) hello(w http.ResponseWriter, req *http.Request) {
 			continue
 		}
 
-		s.storage.SaveValues(time.Now(), key, v[0])
+		val, err := strconv.ParseFloat(v[0], 64)
+		if err != nil {
+			log.Println("error: ", err)
+		}
+
+		s.storage.SaveValues(time.Now(), key, val)
 	}
 }
 

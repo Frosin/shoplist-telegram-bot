@@ -134,6 +134,13 @@ func updateHandler(
 			//bot.AnswerCallbackQuery(tgbotapi.NewCallback(update.CallbackQuery.ID, "")) // Всплывашка с data нажатой кнопки
 		}
 
+		if output.Image != nil {
+			_, err := bot.Send(output.Image)
+			if err != nil {
+				log.Println("error while sending image", err)
+			}
+		}
+
 		debugMsg := ""
 		if debugMode {
 			debugMsg = "[" + update.CallbackQuery.Data + "]"
