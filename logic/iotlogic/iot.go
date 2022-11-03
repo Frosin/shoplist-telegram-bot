@@ -84,6 +84,11 @@ func (c *iotLogic) getOutput() (logic.Output, error) {
 	if err != nil {
 		return newErrorOut(err.Error(), controlButtons), nil
 	}
+	defer func() {
+		f.Close()
+		os.Remove(name)
+	}()
+
 	content, err := ioutil.ReadAll(f)
 
 	if err != nil {
