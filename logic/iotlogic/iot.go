@@ -1,10 +1,11 @@
 package iotlogic
 
 import (
-	"errors"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/Frosin/shoplist-telegram-bot/consts"
@@ -75,7 +76,18 @@ func (c *iotLogic) getOutput() (logic.Output, error) {
 		tgbotapi.NewInlineKeyboardButtonData(backText, consts.FirstPageStart),
 	}
 
-	name, err := c.generateGraph()
+	dayValues, err := c.storage.GetDayValues(time.Now())
+	if err != nil {
+		return newErrorOut(err.Error(), controlButtons), nil
+	}
+
+	if len(dayValues) == 0 {
+		return newErrorOut("no new values", controlButtons), nil
+	}
+
+	msg := getMessage(dayValues)
+
+	name, err := c.generateGraph("t", dayValues["t"])
 	if err != nil {
 		return newErrorOut(err.Error(), controlButtons), nil
 	}
@@ -99,7 +111,7 @@ func (c *iotLogic) getOutput() (logic.Output, error) {
 	img := tgbotapi.NewPhotoUpload(c.sessionItem.ChatID, bytes)
 
 	out := logic.Output{
-		Message: "values",
+		Message: msg,
 		Keyboard: &tgbotapi.InlineKeyboardMarkup{
 			InlineKeyboard: [][]tgbotapi.InlineKeyboardButton{
 				controlButtons,
@@ -111,37 +123,26 @@ func (c *iotLogic) getOutput() (logic.Output, error) {
 	return out, nil
 }
 
-func (c *iotLogic) generateGraph() (string, error) {
+func (c *iotLogic) generateGraph(param string, dayValues []iot.StorageValue) (string, error) {
 	p := plot.New()
 
-	dayValues, err := c.storage.GetDayValues(time.Now())
-	if err != nil {
-		return "", err
-	}
-
-	if len(dayValues) == 0 {
-		return "", errors.New("no new values")
-	}
-
-	p.Title.Text = "values"
+	p.Title.Text = "t"
 	p.X.Label.Text = "time"
 	p.Y.Label.Text = "value"
 
-	for param, values := range dayValues {
-		xyValues := plotter.XYs{}
-		for _, value := range values {
-			xyValues = append(xyValues, plotter.XY{
-				X: timeToFloat(value.Time),
-				Y: value.Value,
-			})
-		}
+	xyValues := plotter.XYs{}
+	for _, value := range dayValues {
+		xyValues = append(xyValues, plotter.XY{
+			X: timeToFloat(value.Time),
+			Y: value.Value,
+		})
+	}
 
-		err := plotutil.AddLinePoints(p,
-			param, xyValues,
-		)
-		if err != nil {
-			return "", err
-		}
+	err := plotutil.AddLinePoints(p,
+		param, xyValues,
+	)
+	if err != nil {
+		return "", err
 	}
 
 	name := uuid.New().String() + ".png"
@@ -152,6 +153,38 @@ func (c *iotLogic) generateGraph() (string, error) {
 	}
 
 	return name, nil
+}
+
+func getMessage(dayValues map[string][]iot.StorageValue) string {
+	bldr := strings.Builder{}
+	for param, pValues := range dayValues {
+		min, max, cur := getNums(pValues)
+
+		paramData := fmt.Sprintf("%s: min=%f, max=%f, cur=%f\n", param, min, max, cur)
+		bldr.WriteString(paramData)
+	}
+	return bldr.String()
+}
+
+func getNums(dayValues []iot.StorageValue) (min, max, cur float64) {
+	if len(dayValues) == 0 {
+		return
+	}
+
+	min = dayValues[0].Value
+	max = dayValues[0].Value
+	cur = dayValues[0].Value
+
+	for _, v := range dayValues {
+		if v.Value > max {
+			max = v.Value
+		}
+		if v.Value < min {
+			min = v.Value
+		}
+		cur = v.Value
+	}
+	return
 }
 
 func timeToFloat(t time.Time) float64 {
