@@ -23,7 +23,8 @@ import (
 )
 
 const (
-	backText = "⬅ Назад"
+	backText   = "⬅ Назад"
+	timeLayout = "15:04"
 )
 
 var (
@@ -160,29 +161,34 @@ func getMessage(dayValues map[string][]iot.StorageValue) string {
 	for param, pValues := range dayValues {
 		min, max, cur := getNums(pValues)
 
-		paramData := fmt.Sprintf("%s: min=%f, max=%f, cur=%f\n", param, min, max, cur)
+		paramData := fmt.Sprintf(
+			"%s: min=%.1f(%s), max=%.1f(%s), cur=%.1f(%s)\n",
+			param, min.Value, min.Time.Format(timeLayout),
+			max.Value, max.Time.Format(timeLayout),
+			cur.Value, cur.Time.Format(timeLayout),
+		)
 		bldr.WriteString(paramData)
 	}
 	return bldr.String()
 }
 
-func getNums(dayValues []iot.StorageValue) (min, max, cur float64) {
+func getNums(dayValues []iot.StorageValue) (min, max, cur iot.StorageValue) {
 	if len(dayValues) == 0 {
 		return
 	}
 
-	min = dayValues[0].Value
-	max = dayValues[0].Value
-	cur = dayValues[0].Value
+	min = dayValues[0]
+	max = dayValues[0]
+	cur = dayValues[0]
 
 	for _, v := range dayValues {
-		if v.Value > max {
-			max = v.Value
+		if v.Value > max.Value {
+			max = v
 		}
-		if v.Value < min {
-			min = v.Value
+		if v.Value < min.Value {
+			min = v
 		}
-		cur = v.Value
+		cur = v
 	}
 	return
 }

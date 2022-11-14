@@ -131,7 +131,7 @@ func (c *currentlist) getOutput(parseObject *helpers.ParseResult, addedItemName 
 	shoppingIDStr := strconv.Itoa(parseObject.ShoppingID)
 	selectedItems := c.sessionItem.GetDataAsArray()
 
-	shoppingData, err := c.sessionItem.SListAPI.GetShopping(parseObject.ShoppingID)
+	_, err := c.sessionItem.SListAPI.GetShopping(parseObject.ShoppingID)
 	if err != nil {
 		return logic.Output{}, fmt.Errorf("%v: %w", consts.CurrentlistWord, err)
 	}
@@ -208,12 +208,8 @@ func (c *currentlist) getOutput(parseObject *helpers.ParseResult, addedItemName 
 
 	if addedItemName != nil {
 		msg := fmt.Sprintf(
-			"Пользователь %s(%v) добавил '%s' в '%s'(%s)",
-			c.sessionItem.User.TelegramUsername,
-			c.sessionItem.User.TelegramID,
+			"Арларлов(а) добавил(а) '%s' в свой текущий",
 			*addedItemName,
-			shoppingData.Edges.Shop.Name,
-			shoppingData.Date,
 		)
 		output.MessageToCommunity = &msg
 	}
