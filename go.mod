@@ -27,6 +27,7 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/viper v1.6.2
 	github.com/technoweenie/multipartstreamer v1.0.1 // indirect
+	go.uber.org/goleak v1.2.0
 	gonum.org/v1/plot v0.12.0
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	gopkg.in/ini.v1 v1.52.0 // indirect

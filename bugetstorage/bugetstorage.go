@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/Frosin/shoplist-telegram-bot/helpers"
 	"github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
@@ -46,17 +47,23 @@ type Note struct {
 }
 
 type Storage struct {
-	db *sqlx.DB
+	db     *sqlx.DB
+	dumper *helpers.Dumper
 }
 
-func NewStorage() (Storage, error) {
+func NewStorage(dumpFn helpers.DumpFn) (Storage, error) {
 	bugetPath := viper.GetString("SHOPLIST-BOT_BUGETPATH")
 	db, err := sqlx.Connect("sqlite3", bugetPath)
 	if err != nil {
 		return Storage{}, err
 	}
+
+	dumper := helpers.NewDumper(dumpFn, nil)
+	dumper.Start()
+
 	return Storage{
-		db: db,
+		db:     db,
+		dumper: dumper,
 	}, nil
 }
 
@@ -79,7 +86,12 @@ func (s Storage) InsertBuget(ctx context.Context, title string) error {
 	if err != nil {
 		return err
 	}
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	s.dumper.ScheduleUpdate()
+	return nil
 }
 
 func (s Storage) GetBuget(ctx context.Context, ID int) (Buget, error) {
@@ -98,6 +110,7 @@ func (s Storage) GetBuget(ctx context.Context, ID int) (Buget, error) {
 	if err != nil {
 		return Buget{}, err
 	}
+
 	return buget, nil
 }
 
@@ -153,7 +166,13 @@ func (s Storage) InsertCategory(ctx context.Context, category Category) error {
 	if err != nil {
 		return err
 	}
-	return tx.Commit()
+
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	s.dumper.ScheduleUpdate()
+	return nil
 }
 
 func (s Storage) UpdateCategory(ctx context.Context, categoryID int, sum int) error {
@@ -176,7 +195,13 @@ func (s Storage) UpdateCategory(ctx context.Context, categoryID int, sum int) er
 	if err != nil {
 		return err
 	}
-	return tx.Commit()
+
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	s.dumper.ScheduleUpdate()
+	return nil
 }
 
 func (s Storage) GetBugetCategories(ctx context.Context, bugetID int) ([]Category, error) {
@@ -261,7 +286,13 @@ func (s Storage) InsertNote(ctx context.Context, note Note) error {
 	if err != nil {
 		return err
 	}
-	return tx.Commit()
+
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	s.dumper.ScheduleUpdate()
+	return nil
 }
 
 func (s Storage) GetCategoryNotes(ctx context.Context, categoryID int) ([]Note, error) {

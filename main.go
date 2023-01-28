@@ -211,6 +211,15 @@ func updateHandler(
 	}
 }
 
+func NewBugetDumpFunction() helpers.DumpFn {
+	yaDiskToken := viper.GetString("YADISK-TOKEN")
+	dbPath := viper.GetString("SHOPLIST-BOT_BUGETPATH")
+
+	return func() error {
+		return helpers.UploadBackupDB(yaDiskToken, "DB", dbPath, true)
+	}
+}
+
 func main() {
 	initConfig()
 	port := viper.GetString("SHOPLIST-BOT_PORT")
@@ -219,6 +228,7 @@ func main() {
 	webhookURL := viper.GetString("SHOPLIST-BOT_WEBHOOK_URL")
 	serviceURI := viper.GetString("SHOPLIST-BOT_SERVICE_URI")
 	startToken := viper.GetString("SHOPLIST-BOT_SERVICE_START_TOKEN")
+
 	// output envs
 	log.Printf("port = %s", port)
 	log.Printf("sentryDsn = %s", sentryDsn)
@@ -260,7 +270,7 @@ func main() {
 
 	sessionStorage := session.NewSessionStorage(serviceURI, startToken, bot, e)
 
-	bugetStorage, err := bugetstorage.NewStorage()
+	bugetStorage, err := bugetstorage.NewStorage(NewBugetDumpFunction())
 	if err != nil {
 		log.Fatal(err)
 	}
