@@ -46,8 +46,10 @@ func (d *Dumper) Start() {
 }
 
 func (d *Dumper) ScheduleUpdate() {
-	if len(d.isUpdated) == 0 {
-		d.isUpdated <- struct{}{}
+	select {
+	case d.isUpdated <- struct{}{}:
+	default:
+		// update already scheduled
 	}
 }
 
@@ -58,5 +60,9 @@ func (d *Dumper) dump() {
 }
 
 func (d *Dumper) ScheduleStop() {
-	d.stop <- struct{}{}
+	select {
+	case d.stop <- struct{}{}:
+	default:
+		// stop already scheduled
+	}
 }

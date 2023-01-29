@@ -26,12 +26,12 @@ func TestDumper(t *testing.T) {
 	dumper := helpers.NewDumper(dumpFn, &testPeriod)
 	dumper.Start()
 
-	for i := 1; i < 21; i++ {
+	for i := 1; i < 31; i++ {
 		dumper.ScheduleUpdate()
 		time.Sleep(time.Millisecond * 100)
 	}
 	dumper.ScheduleStop()
 	time.Sleep(testPeriod)
 
-	assert.Equal(t, counter, int32(2))
+	assert.Equal(t, counter, int32(3))
 }
