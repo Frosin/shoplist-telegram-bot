@@ -16,6 +16,7 @@ gen:
 	ent generate ./internal/shoplist/ent/schema
 deploy:
 	git pull
+	go build
 	sudo systemctl stop shoplist
 	sudo cp ./shoplist.service /etc/systemd/system/shoplist.service
 	systemctl enable shoplist
