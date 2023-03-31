@@ -3,7 +3,9 @@ package main
 import (
 	"fmt"
 	"log"
+	"net/http"
 	"strings"
+	"time"
 
 	"entgo.io/ent/dialect"
 	"github.com/getsentry/sentry-go"
@@ -26,6 +28,7 @@ import (
 	"github.com/Frosin/shoplist-telegram-bot/logic/iotlogic"
 	"github.com/Frosin/shoplist-telegram-bot/logic/settings"
 	"github.com/Frosin/shoplist-telegram-bot/logic/shoppingitems"
+	"github.com/Frosin/shoplist-telegram-bot/metrics"
 	"github.com/Frosin/shoplist-telegram-bot/session"
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -36,7 +39,8 @@ const (
 )
 
 var (
-	cfgFile string
+	cfgFile        string
+	metricInterval = time.Second * 15
 )
 
 func sentryInit(dsn string) {
@@ -220,6 +224,40 @@ func NewBugetDumpFunction() helpers.DumpFn {
 	}
 }
 
+func StartMetricsServer(metricHandler http.Handler) {
+	// create metric handler
+	http.Handle("/metrics", metricHandler)
+
+	// start metric server
+	go func() {
+		if err := http.ListenAndServe(":8585", nil); err != nil {
+			log.Fatal(err)
+		}
+	}()
+}
+
+func startUpdatesRoomTemp(iotStorage iot.IOTStorage, roomTChan, roomHChan chan float64) {
+	go func() {
+		for range time.Tick(time.Hour) {
+			roomTChan <- iotStorage.GetCurrentValue("t")
+			roomHChan <- iotStorage.GetCurrentValue("h")
+		}
+	}()
+}
+
+func startUpdatesCpuTemp(cpuTChan chan float64) {
+	go func() {
+		for range time.Tick(metricInterval) {
+			cpuT, err := metrics.GetPiTemp(nil)
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+			cpuTChan <- cpuT
+		}
+	}()
+}
+
 func main() {
 	initConfig()
 	port := viper.GetString("SHOPLIST-BOT_PORT")
@@ -264,6 +302,15 @@ func main() {
 
 	srv := iot.NewServer(iotStorage, "8090")
 	go srv.StartServer()
+
+	metricStorage := metrics.NewMetricStorage()
+	roomTChan := metricStorage.AddMetric("room", "pi", "temperature")
+	roomHChan := metricStorage.AddMetric("room", "pi", "humidity")
+	cpuTempChan := metricStorage.AddMetric("cpu", "pi", "temperature")
+	StartMetricsServer(metricStorage.GetMetricsHandler())
+
+	startUpdatesRoomTemp(iotStorage, roomTChan, roomHChan)
+	startUpdatesCpuTemp(cpuTempChan)
 
 	// get ent
 	e := getEnt()

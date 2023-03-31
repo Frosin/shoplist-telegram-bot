@@ -21,11 +21,13 @@ require (
 	github.com/mattn/go-isatty v0.0.12 // indirect
 	github.com/mattn/go-sqlite3 v1.14.13
 	github.com/pelletier/go-toml v1.6.0 // indirect
+	github.com/prometheus/client_golang v0.9.3
 	github.com/smartystreets/assertions v1.0.1 // indirect
 	github.com/spf13/afero v1.2.2 // indirect
 	github.com/spf13/cast v1.3.1 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/viper v1.6.2
+	github.com/stretchr/testify v1.8.0
 	github.com/technoweenie/multipartstreamer v1.0.1 // indirect
 	go.uber.org/goleak v1.2.0
 	gonum.org/v1/plot v0.12.0
