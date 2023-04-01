@@ -307,7 +307,7 @@ func main() {
 	roomTChan := metricStorage.AddMetric("room", "pi", "temperature")
 	roomHChan := metricStorage.AddMetric("room", "pi", "humidity")
 	cpuTempChan := metricStorage.AddMetric("cpu", "pi", "temperature")
-	go metricStorage.StartMetricsUpdater(time.Second * 10)
+	go metricStorage.StartMetricsUpdater(metricInterval)
 
 	StartMetricsServer(metricStorage.GetMetricsHandler())
 

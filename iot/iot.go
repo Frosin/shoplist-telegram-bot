@@ -1,6 +1,9 @@
 package iot
 
-import "time"
+import (
+	"log"
+	"time"
+)
 
 const (
 	DateLayout = "2.1.2006"
@@ -54,5 +57,8 @@ func (s *IOTStorageMap) GetDayValues(t time.Time) (map[string][]StorageValue, er
 }
 
 func (s *IOTStorageMap) GetCurrentValue(ID string) float64 {
+	// debug
+	log.Println("GetCurrentValue", ID, s.Value[ID])
+	//
 	return s.Value[ID]
 }
