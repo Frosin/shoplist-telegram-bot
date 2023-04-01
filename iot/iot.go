@@ -46,6 +46,9 @@ func (s *IOTStorageMap) SaveValues(t time.Time, ID string, value float64) error 
 		Value: value,
 	})
 
+	// debug
+	log.Println("SetCurrentValue", ID, value)
+	//
 	s.Value[ID] = value
 
 	return nil
