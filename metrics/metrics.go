@@ -66,10 +66,10 @@ func (m *MetricStorage) GetMetricsHandler() http.Handler {
 func (m *MetricStorage) StartMetricsUpdater(updateInterval time.Duration) {
 	for range time.Tick(updateInterval) {
 		for _, metric := range m.metrics {
-			value := metric.current
+			currentValue := metric.current
 			// get actual value
 			select {
-			case value = <-metric.sourceChan:
+			case value, ok := <-metric.sourceChan:
 				metric.current = value
 			default:
 			}
