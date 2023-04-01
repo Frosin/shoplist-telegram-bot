@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -70,11 +71,15 @@ func (m *MetricStorage) StartMetricsUpdater(updateInterval time.Duration) {
 			// get actual value
 			select {
 			case value, ok := <-metric.sourceChan:
-				metric.current = value
+				// debug
+				currentValue = value
+				log.Println("MetricCurrentValue", metric.name, value, ok)
+				//
 			default:
 			}
 
-			metric.gauge.Set(value)
+			metric.gauge.Set(currentValue)
+			metric.current = currentValue
 		}
 	}
 }
