@@ -2,7 +2,6 @@ package metrics
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -66,22 +65,16 @@ func (m *MetricStorage) GetMetricsHandler() http.Handler {
 //StartMetricsUpdater returns metric updater job
 func (m *MetricStorage) StartMetricsUpdater(updateInterval time.Duration) {
 	for range time.Tick(updateInterval) {
-		for _, metric := range m.metrics {
+		for i, metric := range m.metrics {
 			currentValue := metric.current
 			// get actual value
 			select {
-			case value, ok := <-metric.sourceChan:
-				// debug
+			case value := <-metric.sourceChan:
 				currentValue = value
-				log.Println("MetricCurrentValue", metric.name, value, ok)
-				//
 			default:
 			}
-			// debug
-			log.Println("MetricCurrentCurrentValue", metric.name, metric.current, currentValue)
-			//
+			m.metrics[i].current = currentValue
 			metric.gauge.Set(currentValue)
-			metric.current = currentValue
 		}
 	}
 }
