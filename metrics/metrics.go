@@ -77,7 +77,9 @@ func (m *MetricStorage) StartMetricsUpdater(updateInterval time.Duration) {
 				//
 			default:
 			}
-
+			// debug
+			log.Println("MetricCurrentCurrentValue", metric.name, metric.current, currentValue)
+			//
 			metric.gauge.Set(currentValue)
 			metric.current = currentValue
 		}
