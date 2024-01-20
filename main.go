@@ -25,6 +25,8 @@ import (
 	"github.com/Frosin/shoplist-telegram-bot/logic/currentlist"
 	"github.com/Frosin/shoplist-telegram-bot/logic/dayshoppings"
 	"github.com/Frosin/shoplist-telegram-bot/logic/firstpage"
+	"github.com/Frosin/shoplist-telegram-bot/logic/fund"
+	"github.com/Frosin/shoplist-telegram-bot/logic/funds"
 	"github.com/Frosin/shoplist-telegram-bot/logic/iotlogic"
 	"github.com/Frosin/shoplist-telegram-bot/logic/settings"
 	"github.com/Frosin/shoplist-telegram-bot/logic/shoppingitems"
@@ -335,6 +337,8 @@ func main() {
 		AddNode(consts.CurrentlistWord, currentlist.New()).
 		AddNode(consts.BugetWord, buget.New(bugetStorage)).
 		AddNode(consts.BugetCategoryWord, bugetcategory.New(bugetStorage)).
+		AddNode(consts.FundsWord, funds.New(bugetStorage)).
+		AddNode(consts.FundWord, fund.New(bugetStorage)).
 		AddNode(consts.IOTWord, iotlogic.New(iotStorage))
 
 	log.Println("start updates")

@@ -23,6 +23,7 @@ const (
 	CurrentListStart   = "currentlist_start"
 	BugetStart         = "buget_start"
 	BugetCategoryStart = "bugetcategory_start"
+	FundsStart         = "funds_start"
 	IOTStart           = "iot_start"
 
 	CalendarWord      = "calendar"
@@ -33,6 +34,8 @@ const (
 	CurrentlistWord   = "currentlist"
 	BugetWord         = "buget"
 	BugetCategoryWord = "bugetcategory"
+	FundsWord         = "funds"
+	FundWord          = "fund"
 	IOTWord           = "iot"
 
 	Start = "start"

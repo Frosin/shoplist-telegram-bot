@@ -16,6 +16,7 @@ const (
 	settings  = "Настройки"
 	calendar  = "Календарь"
 	buget     = "Бюджет"
+	funds     = "Фонды"
 	iot       = "iot"
 
 	CurListCmd   = "curlist"
@@ -58,6 +59,7 @@ func getButtons() *tgbotapi.InlineKeyboardMarkup {
 			{tgbotapi.NewInlineKeyboardButtonData(settings, consts.SettingsStart)},
 			{tgbotapi.NewInlineKeyboardButtonData(calendar, consts.CalendarStart)},
 			{tgbotapi.NewInlineKeyboardButtonData(buget, consts.BugetStart)},
+			{tgbotapi.NewInlineKeyboardButtonData(funds, consts.FundsStart)},
 			{tgbotapi.NewInlineKeyboardButtonData(iot, consts.IOTStart)},
 		},
 	}

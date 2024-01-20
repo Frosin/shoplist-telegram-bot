@@ -1,4 +1,4 @@
-package bugetcategory
+package fund
 
 import (
 	"errors"
@@ -6,6 +6,7 @@ import (
 	"log"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"context"
@@ -20,13 +21,15 @@ import (
 )
 
 const (
-	bugetCategoryWord    = "bugetCategory"
-	dateLayout           = "02.01.2006 15:04"
+	bugetCategoryWord    = "fund"
+	dateLayout           = "02.01.06"
 	backText             = "⬅ Назад"
 	newbugetCategoryText = "*** Создать новый ***"
-	emptyItems           = "Нет категорий для отображения"
+	emptyItems           = "Нет фондов для отображения"
 
-	catText = "Категория: %s освоение %d%% (%d/%d):\n"
+	fundText = "Фонд: %s состояние (%dр):\n"
+
+	maxHistoryNotes = 10
 )
 
 var (
@@ -56,47 +59,50 @@ func (c *bugetCategory) GetCallbackOutput(command string) (logic.Output, error) 
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	categoryID, err := parseCurData(command)
+	fundID, err := parseCurData(command)
 	if err != nil {
-		return logic.Output{}, fmt.Errorf("%v: %w", consts.BugetCategoryWord, err)
+		return logic.Output{}, fmt.Errorf("%v: %w", consts.FundWord, err)
 	}
-	category, err := c.storage.GetCategory(ctx, categoryID)
+	fund, err := c.storage.GetFund(ctx, fundID)
 	if err != nil {
-		return logic.Output{}, fmt.Errorf("%v: %w", consts.BugetCategoryWord, err)
+		return logic.Output{}, fmt.Errorf("%v: %w", consts.FundWord, err)
 	}
 
-	return c.getOutput(category)
+	return c.getOutput(fund)
 }
 
-// returns categoryID
+// returns fundID
 func parseCurData(data string) (int, error) {
 	//parse msg to category
 	m := patternCallback.FindStringSubmatch(data)
 	if len(m) != 2 {
 		return 0, errors.New("parsing error")
 	}
-	categoryID, err := strconv.Atoi(m[1])
+
+	fundID, err := strconv.Atoi(m[1])
 	if err != nil {
 		return 0, err
 	}
-	return categoryID, nil
+	return fundID, nil
 }
 
 func (c *bugetCategory) GetMessageOutput(curData string, msg string) (logic.Output, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	categoryID, err := parseCurData(curData)
+
+	fundID, err := parseCurData(curData)
 	if err != nil {
-		return logic.Output{}, fmt.Errorf("%v: %w", consts.BugetCategoryWord, err)
+		return logic.Output{}, fmt.Errorf("%v: %w", consts.FundWord, err)
 	}
-	category, err := c.storage.GetCategory(ctx, categoryID)
+
+	fund, err := c.storage.GetFund(ctx, fundID)
 	if err != nil {
-		return logic.Output{}, fmt.Errorf("%v: %w", consts.BugetCategoryWord, err)
+		return logic.Output{}, fmt.Errorf("%v: %w", consts.FundWord, err)
 	}
 
 	m := patternNewNote.FindStringSubmatch(msg)
 	if len(m) != 4 {
-		return c.getOutput(category)
+		return c.getOutput(fund)
 	}
 	noteTitle := m[3]
 	noteSum, _ := strconv.Atoi(m[2])
@@ -106,24 +112,24 @@ func (c *bugetCategory) GetMessageOutput(curData string, msg string) (logic.Outp
 		noteSum = noteSum * -1
 	}
 
-	newCurrent := category.Current + int64(noteSum)
-	category.Current = newCurrent
+	newCurrent := fund.Current + int64(noteSum)
+	fund.Current = newCurrent
 	//update category
-	if err := c.storage.UpdateCategory(ctx, categoryID, int(newCurrent)); err != nil {
-		return logic.Output{}, fmt.Errorf("%v: %w", consts.BugetCategoryWord, err)
+	if err := c.storage.UpdateFund(ctx, fundID, int(newCurrent)); err != nil {
+		return logic.Output{}, fmt.Errorf("%v: %w", consts.FundWord, err)
 	}
 	//create new note
 	note := bugetstorage.Note{
-		CategoryID: categoryID,
+		CategoryID: fundID,
 		Sum:        noteSum,
 		Title:      noteTitle,
 		Created:    time.Now().Unix(),
 	}
 	if err := c.storage.InsertNote(ctx, note); err != nil {
-		return logic.Output{}, fmt.Errorf("%v: %w", consts.BugetCategoryWord, err)
+		return logic.Output{}, fmt.Errorf("%v: %w", consts.FundWord, err)
 	}
 
-	return c.getOutput(category)
+	return c.getOutput(fund)
 }
 
 func (c *bugetCategory) getOutput(category bugetstorage.Category) (logic.Output, error) {
@@ -139,7 +145,7 @@ func (c *bugetCategory) getOutput(category bugetstorage.Category) (logic.Output,
 
 	//create keyboard and add back button to keyboard
 	controlButtons := []tgbotapi.InlineKeyboardButton{
-		tgbotapi.NewInlineKeyboardButtonData(backText, consts.BugetStart),
+		tgbotapi.NewInlineKeyboardButtonData(backText, consts.FundsStart),
 	}
 
 	column := [][]tgbotapi.InlineKeyboardButton{controlButtons}
@@ -150,22 +156,32 @@ func (c *bugetCategory) getOutput(category bugetstorage.Category) (logic.Output,
 	}
 	notes, err := c.storage.GetCategoryNotes(ctx, category.ID)
 	if err != nil {
-		return logic.Output{}, fmt.Errorf("%v: %w", consts.BugetCategoryWord, err)
-	}
-	var fillPercent int64
-	if category.Target > 0 {
-		fillPercent = int64(category.Current * 100 / category.Target)
+		return logic.Output{}, fmt.Errorf("%v: %w", consts.FundWord, err)
 	}
 
-	outTxt := fmt.Sprintf(catText, category.Title, fillPercent, category.Current, category.Target)
+	outTxt := []string{fmt.Sprintf(fundText, category.Title, category.Current)}
 	for i, v := range notes {
 		t := time.Unix(v.Created, 0).Format(dateLayout)
-		noteTxt := fmt.Sprintf("%d) %s -> %dр. - %s\n", i+1, t, v.Sum, v.Title)
-		outTxt += noteTxt
+		plus := ""
+		if v.Sum > 0 {
+			plus = "+"
+		}
+		noteTxt := fmt.Sprintf("%d) %s -> %s%dр. - %s\n", i+1, t, plus, v.Sum, v.Title)
+		outTxt = append(outTxt, noteTxt)
+	}
+
+	outLen := len(outTxt)
+	if outLen > maxHistoryNotes {
+		cut := []string{
+			outTxt[0], "...\n",
+		}
+		cut = append(cut, outTxt[outLen-maxHistoryNotes:]...)
+
+		outTxt = cut
 	}
 
 	output := logic.Output{
-		Message:  outTxt,
+		Message:  strings.Join(outTxt, ""),
 		Keyboard: keyboard,
 	}
 

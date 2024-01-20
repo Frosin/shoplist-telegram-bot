@@ -18,6 +18,8 @@ const (
 	bugetDB    = "buget"
 	categoryDB = "category"
 	noteDB     = "note"
+
+	fundsBudgetID = -1
 )
 
 var (
@@ -175,6 +177,44 @@ func (s Storage) InsertCategory(ctx context.Context, category Category) error {
 	return nil
 }
 
+func (s Storage) InsertFund(ctx context.Context, category Category) error {
+	q, args, err := squirrel.
+		Insert(categoryDB).
+		Columns(
+			"buget_id",
+			"title",
+			"current",
+			"target",
+		).
+		Values(
+			fundsBudgetID,
+			category.Title,
+			category.Current,
+			0,
+		).
+		PlaceholderFormat(squirrel.Dollar).
+		ToSql()
+	if err != nil {
+		return err
+	}
+	tx, err := s.db.BeginTx(ctx, &txOptions)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback() }()
+	_, err = tx.Exec(q, args...)
+	if err != nil {
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	s.dumper.ScheduleUpdate()
+	return nil
+}
+
 func (s Storage) UpdateCategory(ctx context.Context, categoryID int, sum int) error {
 	q, args, err := squirrel.
 		Update(categoryDB).
@@ -202,6 +242,10 @@ func (s Storage) UpdateCategory(ctx context.Context, categoryID int, sum int) er
 
 	s.dumper.ScheduleUpdate()
 	return nil
+}
+
+func (s Storage) UpdateFund(ctx context.Context, categoryID int, sum int) error {
+	return s.UpdateCategory(ctx, categoryID, sum)
 }
 
 func (s Storage) GetBugetCategories(ctx context.Context, bugetID int) ([]Category, error) {
@@ -234,6 +278,35 @@ func (s Storage) GetBugetCategories(ctx context.Context, bugetID int) ([]Categor
 	return categories, nil
 }
 
+func (s Storage) GetFunds(ctx context.Context) ([]Category, error) {
+	q, args, err := squirrel.
+		Select("id", "buget_id", "title", "current").
+		From(categoryDB).
+		Where(squirrel.Eq{"buget_id": fundsBudgetID}).
+		PlaceholderFormat(squirrel.Dollar).
+		ToSql()
+	if err != nil {
+		return nil, err
+	}
+	categories := []Category{}
+	category := Category{}
+	rows, err := s.db.QueryxContext(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		err = rows.Scan(
+			&category.ID, &category.BugetID,
+			&category.Title, &category.Current,
+		)
+		if err != nil {
+			return nil, err
+		}
+		categories = append(categories, category)
+	}
+	return categories, nil
+}
+
 func (s Storage) GetCategory(ctx context.Context, ID int) (Category, error) {
 	q, args, err := squirrel.
 		Select("id", "buget_id", "title", "current", "target").
@@ -255,6 +328,10 @@ func (s Storage) GetCategory(ctx context.Context, ID int) (Category, error) {
 		return Category{}, err
 	}
 	return category, nil
+}
+
+func (s Storage) GetFund(ctx context.Context, ID int) (Category, error) {
+	return s.GetCategory(ctx, ID)
 }
 
 func (s Storage) InsertNote(ctx context.Context, note Note) error {
