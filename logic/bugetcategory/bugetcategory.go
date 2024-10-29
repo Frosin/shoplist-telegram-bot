@@ -187,6 +187,9 @@ func daysIn(m time.Month, year int) int {
 }
 
 func checkSpend(category bugetstorage.Category, now time.Time) string {
+	if category.Target < 10000 {
+		return ""
+	}
 	days := daysIn(now.Month(), now.Year())
 
 	dayBudget := category.Target / int64(days)
@@ -197,7 +200,7 @@ func checkSpend(category bugetstorage.Category, now time.Time) string {
 	over := diff < 0
 
 	daysOver := int64(0)
-	if over {
+	if over && dayBudget > 0 {
 		daysOver = (-1 * diff) / dayBudget
 	}
 
