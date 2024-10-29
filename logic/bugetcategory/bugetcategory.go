@@ -108,6 +108,11 @@ func (c *bugetCategory) GetMessageOutput(curData string, msg string) (logic.Outp
 
 	newCurrent := category.Current + int64(noteSum)
 	category.Current = newCurrent
+
+	if category.Target != 0 &&
+		(category.Current-category.Target) > 0 {
+		return logic.Output{}, fmt.Errorf("%v: %w", consts.BugetCategoryWord, errors.New("В категории не осталось средств!"))
+	}
 	//update category
 	if err := c.storage.UpdateCategory(ctx, categoryID, int(newCurrent)); err != nil {
 		return logic.Output{}, fmt.Errorf("%v: %w", consts.BugetCategoryWord, err)
@@ -164,10 +169,42 @@ func (c *bugetCategory) getOutput(category bugetstorage.Category) (logic.Output,
 		outTxt += noteTxt
 	}
 
+	spendInfo := checkSpend(category, time.Now())
+	if spendInfo != "" {
+		outTxt = outTxt + "\n" + spendInfo
+	}
+
 	output := logic.Output{
 		Message:  outTxt,
 		Keyboard: keyboard,
 	}
 
 	return output, nil
+}
+
+func daysIn(m time.Month, year int) int {
+	return time.Date(year, m+1, 0, 0, 0, 0, 0, time.UTC).Day()
+}
+
+func checkSpend(category bugetstorage.Category, now time.Time) string {
+	days := daysIn(now.Month(), now.Year())
+
+	dayBudget := category.Target / int64(days)
+	curDayTargetSpent := int64(now.Day()) * dayBudget
+
+	diff := curDayTargetSpent - category.Current
+
+	over := diff < 0
+
+	daysOver := int64(0)
+	if over {
+		daysOver = (-1 * diff) / dayBudget
+	}
+
+	if daysOver != 0 {
+		txt := fmt.Sprintf("🤬 Тормозни! Перерасход на %d дня", daysOver)
+		return txt
+	}
+
+	return ""
 }
