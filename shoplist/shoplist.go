@@ -33,7 +33,7 @@ type Shoplist struct {
 	ent   *ent.Client
 }
 
-//NewShoplistAPI returns new Shoplist api instance
+// NewShoplistAPI returns new Shoplist api instance
 func NewShoplistAPI(e *ent.Client, token string) *Shoplist {
 	return &Shoplist{
 		token: token,
@@ -41,7 +41,7 @@ func NewShoplistAPI(e *ent.Client, token string) *Shoplist {
 	}
 }
 
-func (s *Shoplist) GetUserByTelegramID(telegramID int) (*ent.User, error) {
+func (s *Shoplist) GetUserByTelegramID(telegramID int64) (*ent.User, error) {
 
 	log.Info("METHOD GetUserByTelegramID")
 
@@ -80,7 +80,7 @@ func (s *Shoplist) GetUsersByComunityID(comunityID string) ([]*ent.User, error) 
 	return users, nil
 }
 
-func (s *Shoplist) CreateUser(userID int, chatID int64, username string) (*ent.User, error) {
+func (s *Shoplist) CreateUser(userID int64, chatID int64, username string) (*ent.User, error) {
 	log.Info("METHOD CreateUser")
 
 	ctx, cancel := context.WithTimeout(context.Background(), consts.ReadTimeout)
@@ -137,7 +137,7 @@ func (s *Shoplist) UpdateUser(userID int, comunityID, userName *string) error {
 	return nil
 }
 
-func (s *Shoplist) UserInit(telegramUserID int, chatID int64, userName string) (*ent.User, error) {
+func (s *Shoplist) UserInit(telegramUserID int64, chatID int64, userName string) (*ent.User, error) {
 
 	log.Info("METHOD UserInit")
 	user, err := s.GetUserByTelegramID(telegramUserID)
@@ -186,7 +186,7 @@ func (s *Shoplist) getCommunityUsers() (int, []int, error) {
 	return usr.ID, comUserIDs, nil
 }
 
-//GetShoppingDays returns days with shoppings by date params
+// GetShoppingDays returns days with shoppings by date params
 func (s *Shoplist) GetShoppingDays(time time.Time) ([]int, error) {
 	log.Info("METHOD GetShoppingDays")
 

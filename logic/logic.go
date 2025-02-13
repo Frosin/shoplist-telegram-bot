@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/Frosin/shoplist-telegram-bot/session"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 type Input struct {
@@ -16,7 +16,12 @@ type Output struct {
 	Message            string
 	Keyboard           *tgbotapi.InlineKeyboardMarkup
 	MessageToCommunity *string
-	Image              *tgbotapi.PhotoConfig
+	Image              *tgbotapi.FileBytes
+	ImageStream        *ImageStream
+}
+
+type ImageStream struct {
+	Ch chan *tgbotapi.FileBytes
 }
 
 type Node interface {

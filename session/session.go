@@ -6,7 +6,7 @@ import (
 
 	"github.com/Frosin/shoplist-telegram-bot/internal/shoplist/ent"
 	"github.com/Frosin/shoplist-telegram-bot/shoplist"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 const (
@@ -27,7 +27,7 @@ type SessionItem struct {
 type SessionStorage struct {
 	serviceURL string //database service URL
 	startToken string
-	items      map[int]*SessionItem //index by telegramUserID
+	items      map[int64]*SessionItem //index by telegramUserID
 	botAPI     *tgbotapi.BotAPI
 	e          *ent.Client
 }
@@ -36,7 +36,7 @@ func NewSessionStorage(serviceURL, startToken string, botAPI *tgbotapi.BotAPI, e
 	storage := SessionStorage{
 		serviceURL: serviceURL,
 		startToken: startToken,
-		items:      map[int]*SessionItem{},
+		items:      map[int64]*SessionItem{},
 		botAPI:     botAPI,
 		e:          e,
 	}
@@ -51,7 +51,7 @@ func (s *SessionStorage) deferredDeletion(item *SessionItem) {
 		// 		tgbotapi.KeyboardButton{Text: consts.MenuText},
 		// 	})
 		// s.botAPI.Send(startMessage)
-		delete(s.items, int(item.User.TelegramID))
+		delete(s.items, int64(item.User.TelegramID))
 	})
 }
 

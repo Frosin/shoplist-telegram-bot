@@ -9,7 +9,7 @@ require (
 	github.com/dchest/uniuri v0.0.0-20200228104902-7aecb25e1fe5
 	github.com/deepmap/oapi-codegen v1.3.4 // indirect
 	github.com/getsentry/sentry-go v0.5.1
-	github.com/go-telegram-bot-api/telegram-bot-api v4.6.4+incompatible
+	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1
 	github.com/google/uuid v1.3.0
 	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
 	github.com/gorilla/mux v1.6.2
@@ -28,7 +28,6 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/viper v1.6.2
 	github.com/stretchr/testify v1.8.0
-	github.com/technoweenie/multipartstreamer v1.0.1 // indirect
 	go.uber.org/goleak v1.2.0
 	gonum.org/v1/plot v0.12.0
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect

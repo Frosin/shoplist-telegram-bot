@@ -2,9 +2,10 @@ package iotlogic
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -19,7 +20,7 @@ import (
 	"gonum.org/v1/plot/vg"
 
 	"github.com/Frosin/shoplist-telegram-bot/iot"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 const (
@@ -102,14 +103,13 @@ func (c *iotLogic) getOutput() (logic.Output, error) {
 		os.Remove(name)
 	}()
 
-	content, err := ioutil.ReadAll(f)
+	content, err := io.ReadAll(f)
 
 	if err != nil {
 		return newErrorOut(err.Error(), controlButtons), nil
 	}
 
 	bytes := tgbotapi.FileBytes{Name: name, Bytes: content}
-	img := tgbotapi.NewPhotoUpload(c.sessionItem.ChatID, bytes)
 
 	out := logic.Output{
 		Message: msg,
@@ -118,10 +118,45 @@ func (c *iotLogic) getOutput() (logic.Output, error) {
 				controlButtons,
 			},
 		},
-		Image: &img,
+		Image:       &bytes,
+		ImageStream: testPrepareImgstream(),
 	}
 
 	return out, nil
+}
+
+func testPrepareImgstream() *logic.ImageStream {
+	f1, err := os.ReadFile("./test/1.jpg")
+	if err != nil {
+		log.Println("error load test img #1")
+		return nil
+	}
+
+	f2, err := os.ReadFile("./test/2.jpg")
+	if err != nil {
+		log.Println("error load test img #2")
+		return nil
+	}
+
+	f3, err := os.ReadFile("./test/3.jpg")
+	if err != nil {
+		log.Println("error load test img #3")
+		return nil
+	}
+
+	streamData := [][]byte{f1, f2, f3, f1, f2, f3, f1, f2, f3}
+	outChan := make(chan *tgbotapi.FileBytes)
+
+	go func() {
+		for i, data := range streamData {
+			time.Sleep(time.Second * 3)
+			outChan <- &tgbotapi.FileBytes{Name: strconv.Itoa(i), Bytes: data}
+		}
+	}()
+
+	return &logic.ImageStream{
+		Ch: outChan,
+	}
 }
 
 func (c *iotLogic) generateGraph(param string, dayValues []iot.StorageValue) (string, error) {

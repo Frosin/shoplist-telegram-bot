@@ -12,7 +12,7 @@ import (
 	"github.com/Frosin/shoplist-telegram-bot/logic"
 	"github.com/Frosin/shoplist-telegram-bot/session"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 const (
@@ -46,9 +46,8 @@ func getFirstDayDate(date time.Time) time.Time {
 	return time.Date(date.Year(), date.Month(), 1, 0, 0, 0, 0, date.Location())
 }
 
-//GetCalendar returns
+// GetCalendar returns
 // calendar_prev, calendar_next, calendar_<1-31>, calendar_back
-//
 func GetCalendar(date time.Time, shoppingDays []int) tgbotapi.InlineKeyboardMarkup {
 	var numericKeyboard tgbotapi.InlineKeyboardMarkup
 	var rows [][]tgbotapi.InlineKeyboardButton
@@ -147,7 +146,7 @@ func getHoursDuration(date time.Time) float64 {
 	return diff
 }
 
-//TryGetPrevMonthDate shift current date to month back or nil
+// TryGetPrevMonthDate shift current date to month back or nil
 func TryGetPrevMonthDate(date time.Time) *time.Time {
 	diff := getHoursDuration(date)
 	// if it really previous month and 1 year limit
@@ -162,7 +161,7 @@ func TryGetPrevMonthDate(date time.Time) *time.Time {
 	return &result
 }
 
-//TryGetNextMonthDate shift date to the month forward
+// TryGetNextMonthDate shift date to the month forward
 func TryGetNextMonthDate(date time.Time) *time.Time {
 	diff := getHoursDuration(date)
 	// if it really next month and 1 year limit

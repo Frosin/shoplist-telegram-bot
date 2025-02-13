@@ -9,7 +9,7 @@ import (
 
 	"entgo.io/ent/dialect"
 	"github.com/getsentry/sentry-go"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/spf13/viper"
 
 	"github.com/Frosin/shoplist-telegram-bot/bugetstorage"
@@ -141,10 +141,49 @@ func updateHandler(
 		}
 
 		if output.Image != nil {
-			_, err := bot.Send(output.Image)
+			img := tgbotapi.NewPhoto(sessionItem.ChatID, output.Image)
+			_, err := bot.Send(img)
 			if err != nil {
 				log.Println("error while sending image", err)
 			}
+		}
+
+		if output.ImageStream != nil {
+			go func(s *logic.ImageStream) {
+				msgID := 0
+				for sImg := range s.Ch {
+					if sImg == nil {
+						log.Println("ImageStream: ch sImg is nil", err)
+						return
+					}
+
+					if msgID == 0 {
+						img := tgbotapi.NewPhoto(sessionItem.ChatID, sImg)
+						msg, err := bot.Send(img)
+						if err != nil {
+							log.Println("ImageStream: error send img", err)
+							return
+						}
+
+						msgID = msg.MessageID
+					}
+
+					editedImg := tgbotapi.EditMessageMediaConfig{
+						BaseEdit: tgbotapi.BaseEdit{
+							ChatID:    sessionItem.ChatID,
+							MessageID: msgID,
+						},
+						Media: sImg,
+					}
+					msg, err := bot.Send(editedImg)
+					if err != nil {
+						log.Println("ImageStream: error send updated img", err)
+						return
+					}
+					msgID = msg.MessageID
+				}
+			}(output.ImageStream)
+			log.Println("ImageStream: finish stream")
 		}
 
 		debugMsg := ""
@@ -287,18 +326,10 @@ func main() {
 	bot.Debug = true
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 
-	_, err = bot.RemoveWebhook()
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 
-	updates, err := bot.GetUpdatesChan(u)
-	if err != nil {
-		log.Fatal(err)
-	}
+	updates := bot.GetUpdatesChan(u)
 
 	iotStorage := iot.NewIOTStorageMap()
 

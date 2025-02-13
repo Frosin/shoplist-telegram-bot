@@ -16,7 +16,7 @@ import (
 	"github.com/Frosin/shoplist-telegram-bot/session"
 	"github.com/spf13/viper"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 const (

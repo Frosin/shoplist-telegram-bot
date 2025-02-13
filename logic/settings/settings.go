@@ -14,7 +14,7 @@ import (
 	"github.com/dchest/uniuri"
 	"github.com/spf13/viper"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 const (
@@ -134,7 +134,7 @@ func (s *settings) GetMessageOutput(curData string, msg string) (logic.Output, e
 		return s.getStartPage(AlreadyInGroupText)
 	}
 
-	intUserID, err := strconv.Atoi(msg)
+	intUserID, err := strconv.ParseInt(msg, 10, 64)
 	if err != nil {
 		return s.getStartPage(InvalidUserIDText)
 	}
