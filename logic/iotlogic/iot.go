@@ -2,7 +2,6 @@ package iotlogic
 
 import (
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"strconv"
@@ -78,47 +77,46 @@ func (c *iotLogic) getOutput() (logic.Output, error) {
 		tgbotapi.NewInlineKeyboardButtonData(backText, consts.FirstPageStart),
 	}
 
-	dayValues, err := c.storage.GetDayValues(time.Now())
-	if err != nil {
-		return newErrorOut(err.Error(), controlButtons), nil
-	}
+	// dayValues, err := c.storage.GetDayValues(time.Now())
+	// if err != nil {
+	// 	return newErrorOut(err.Error(), controlButtons), nil
+	// }
 
-	if len(dayValues) == 0 {
-		return newErrorOut("no new values", controlButtons), nil
-	}
+	// if len(dayValues) == 0 {
+	// 	return newErrorOut("no new values", controlButtons), nil
+	// }
 
-	msg := getMessage(dayValues)
+	// msg := getMessage(dayValues)
 
-	name, err := c.generateGraph("t", dayValues["t"])
-	if err != nil {
-		return newErrorOut(err.Error(), controlButtons), nil
-	}
+	// name, err := c.generateGraph("t", dayValues["t"])
+	// if err != nil {
+	// 	return newErrorOut(err.Error(), controlButtons), nil
+	// }
 
-	f, err := os.Open(name)
-	if err != nil {
-		return newErrorOut(err.Error(), controlButtons), nil
-	}
-	defer func() {
-		f.Close()
-		os.Remove(name)
-	}()
+	// f, err := os.Open(name)
+	// if err != nil {
+	// 	return newErrorOut(err.Error(), controlButtons), nil
+	// }
+	// defer func() {
+	// 	f.Close()
+	// 	os.Remove(name)
+	// }()
 
-	content, err := io.ReadAll(f)
+	// content, err := io.ReadAll(f)
+	// if err != nil {
+	// 	return newErrorOut(err.Error(), controlButtons), nil
+	// }
 
-	if err != nil {
-		return newErrorOut(err.Error(), controlButtons), nil
-	}
-
-	bytes := tgbotapi.FileBytes{Name: name, Bytes: content}
+	//bytes := tgbotapi.FileBytes{Name: name, Bytes: content}
 
 	out := logic.Output{
-		Message: msg,
+		Message: "test stream",
 		Keyboard: &tgbotapi.InlineKeyboardMarkup{
 			InlineKeyboard: [][]tgbotapi.InlineKeyboardButton{
 				controlButtons,
 			},
 		},
-		Image:       &bytes,
+		//Image:       &bytes,
 		ImageStream: testPrepareImgstream(),
 	}
 
@@ -152,6 +150,7 @@ func testPrepareImgstream() *logic.ImageStream {
 			time.Sleep(time.Second * 3)
 			outChan <- &tgbotapi.FileBytes{Name: strconv.Itoa(i), Bytes: data}
 		}
+		close(outChan)
 	}()
 
 	return &logic.ImageStream{

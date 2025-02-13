@@ -166,6 +166,7 @@ func updateHandler(
 						}
 
 						msgID = msg.MessageID
+						continue
 					}
 
 					editedImg := tgbotapi.EditMessageMediaConfig{
@@ -173,7 +174,7 @@ func updateHandler(
 							ChatID:    sessionItem.ChatID,
 							MessageID: msgID,
 						},
-						Media: sImg,
+						Media: tgbotapi.NewInputMediaPhoto(*sImg),
 					}
 					msg, err := bot.Send(editedImg)
 					if err != nil {
@@ -182,8 +183,9 @@ func updateHandler(
 					}
 					msgID = msg.MessageID
 				}
+				log.Println("ImageStream: finish stream")
 			}(output.ImageStream)
-			log.Println("ImageStream: finish stream")
+
 		}
 
 		debugMsg := ""
