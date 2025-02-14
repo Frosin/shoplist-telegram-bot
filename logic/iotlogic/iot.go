@@ -3,12 +3,11 @@ package iotlogic
 import (
 	"fmt"
 	"log"
-	"os"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/Frosin/shoplist-telegram-bot/consts"
+	"github.com/Frosin/shoplist-telegram-bot/internal/pkg/h264"
 	"github.com/Frosin/shoplist-telegram-bot/logic"
 	"github.com/Frosin/shoplist-telegram-bot/session"
 	"github.com/google/uuid"
@@ -124,37 +123,10 @@ func (c *iotLogic) getOutput() (logic.Output, error) {
 }
 
 func testPrepareImgstream() *logic.ImageStream {
-	f1, err := os.ReadFile("./test/1.jpg")
-	if err != nil {
-		log.Println("error load test img #1")
-		return nil
-	}
-
-	f2, err := os.ReadFile("./test/2.jpg")
-	if err != nil {
-		log.Println("error load test img #2")
-		return nil
-	}
-
-	f3, err := os.ReadFile("./test/3.jpg")
-	if err != nil {
-		log.Println("error load test img #3")
-		return nil
-	}
-
-	streamData := [][]byte{f1, f2, f3, f1, f2, f3, f1, f2, f3}
-	outChan := make(chan *tgbotapi.FileBytes)
-
-	go func() {
-		for i, data := range streamData {
-			time.Sleep(time.Second * 3)
-			outChan <- &tgbotapi.FileBytes{Name: strconv.Itoa(i), Bytes: data}
-		}
-		close(outChan)
-	}()
+	ch := h264.GetStream(viper.GetString("CAM_URL"), time.Second*3, 10)
 
 	return &logic.ImageStream{
-		Ch: outChan,
+		Ch: ch,
 	}
 }
 
