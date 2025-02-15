@@ -123,7 +123,7 @@ func (c *iotLogic) getOutput() (logic.Output, error) {
 }
 
 func testPrepareImgstream() *logic.ImageStream {
-	ch := h264.GetStream(viper.GetString("CAM_URL"), time.Second*3, 10)
+	ch := h264.GetStream(viper.GetString("CAM_URL"), time.Second*10, 3)
 
 	return &logic.ImageStream{
 		Ch: ch,
