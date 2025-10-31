@@ -43,8 +43,8 @@ type Category struct {
 type PaymentMethod byte
 
 const (
-	PaymentMethodCash PaymentMethod = 0
-	PaymentMethodCard PaymentMethod = 1
+	PaymentMethodCard PaymentMethod = 0
+	PaymentMethodCash PaymentMethod = 1
 )
 
 type Note struct {
