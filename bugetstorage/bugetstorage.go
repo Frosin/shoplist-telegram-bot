@@ -35,9 +35,9 @@ type Category struct {
 	ID          int
 	BugetID     int
 	Title       string
-	Current     int64
-	CashCurrent int64
-	Target      int64
+	Current     int
+	CashCurrent int
+	Target      int
 }
 
 type PaymentMethod byte
@@ -109,7 +109,7 @@ func (s Storage) GetBudget(ctx context.Context, ID int) (Budget, error) {
 	return budget, nil
 }
 
-func (s Storage) GetLastBudgets(ctx context.Context, num uint64) ([]Budget, error) {
+func (s Storage) GetLastBudgets(ctx context.Context, num uint) ([]Budget, error) {
 	var budgets []Budget
 	query := `SELECT id, title, created FROM budget ORDER BY created DESC LIMIT ?`
 
@@ -155,7 +155,7 @@ func (s Storage) InsertFund(ctx context.Context, category Category) error {
 	return nil
 }
 
-func (s Storage) UpdateCategory(ctx context.Context, categoryID int, current, cashCurrent int64) error {
+func (s Storage) UpdateCategory(ctx context.Context, categoryID int, current, cashCurrent int) error {
 	tx, err := s.db.BeginTxx(ctx, &txOptions)
 	if err != nil {
 		return fmt.Errorf("beginning transaction: %w", err)
@@ -176,7 +176,7 @@ func (s Storage) UpdateCategory(ctx context.Context, categoryID int, current, ca
 	return nil
 }
 
-func (s Storage) UpdateFund(ctx context.Context, categoryID int, current int64) error {
+func (s Storage) UpdateFund(ctx context.Context, categoryID int, current int) error {
 	return s.UpdateCategory(ctx, categoryID, current, 0)
 }
 
@@ -259,11 +259,11 @@ func (s Storage) updateCategoryBalance(ctx context.Context, tx *sqlx.Tx, categor
 		return fmt.Errorf("getting category for update: %w", err)
 	}
 
-	newCurrent := category.Current + int64(sum)
+	newCurrent := category.Current + sum
 
 	newCashCurrent := category.CashCurrent
 	if paymentType == PaymentMethodCash {
-		newCashCurrent += int64(sum)
+		newCashCurrent += sum
 	}
 
 	_, err = tx.ExecContext(ctx,

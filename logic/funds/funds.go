@@ -72,7 +72,7 @@ func (c *buget) GetMessageOutput(curData string, msg string) (logic.Output, erro
 	newFund := bugetstorage.Category{
 		BugetID: 0,
 		Title:   title,
-		Current: int64(fundSum),
+		Current: fundSum,
 	}
 
 	err := c.storage.InsertFund(ctx, newFund)
@@ -117,7 +117,7 @@ func (c *buget) getOutput() (logic.Output, error) {
 
 	column := [][]tgbotapi.InlineKeyboardButton{}
 
-	var curSum int64
+	var curSum int
 	// create items list to show
 	for i, fund := range funds {
 		curSum += fund.Current

@@ -116,7 +116,7 @@ func (c *bugetCategory) GetMessageOutput(curData string, msg string) (logic.Outp
 		method = bugetstorage.PaymentMethodCash
 	}
 
-	newCurrent := category.Current + int64(noteSum)
+	newCurrent := category.Current + noteSum
 	category.Current = newCurrent
 
 	if category.Target != 0 &&
@@ -201,14 +201,14 @@ func checkSpend(category bugetstorage.Category, now time.Time) string {
 	}
 	days := daysIn(now.Month(), now.Year())
 
-	dayBudget := category.Target / int64(days)
-	curDayTargetSpent := int64(now.Day()) * dayBudget
+	dayBudget := category.Target / days
+	curDayTargetSpent := now.Day() * dayBudget
 
 	diff := curDayTargetSpent - category.Current
 
 	over := diff < 0
 
-	daysOver := int64(0)
+	daysOver := int(0)
 	if over && dayBudget > 0 {
 		daysOver = (-1 * diff) / dayBudget
 	}

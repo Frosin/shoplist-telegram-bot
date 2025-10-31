@@ -112,7 +112,7 @@ func (c *bugetCategory) GetMessageOutput(curData string, msg string) (logic.Outp
 		noteSum = noteSum * -1
 	}
 
-	newCurrent := fund.Current + int64(noteSum)
+	newCurrent := fund.Current + noteSum
 	fund.Current = newCurrent
 	//update category
 	if err := c.storage.UpdateFund(ctx, fundID, int(newCurrent)); err != nil {

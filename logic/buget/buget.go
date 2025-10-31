@@ -103,7 +103,7 @@ func (c *buget) GetMessageOutput(curData string, msg string) (logic.Output, erro
 		BugetID: lastBuget[0].ID,
 		Title:   title,
 		Current: 0,
-		Target:  int64(targetSum),
+		Target:  targetSum,
 	}
 
 	err = c.storage.InsertCategory(ctx, newCategory)
@@ -157,7 +157,7 @@ func (c *buget) getOutput() (logic.Output, error) {
 
 	column := [][]tgbotapi.InlineKeyboardButton{}
 
-	var targetSum, curSum, currentCashSum int64
+	var targetSum, curSum, currentCashSum int
 	// create items list to show
 	for i, category := range categories {
 		curSum += category.Current
