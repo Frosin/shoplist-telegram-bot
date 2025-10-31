@@ -63,10 +63,10 @@ type Storage struct {
 
 func (m PaymentMethod) String() string {
 	if m == 0 {
-		return "н"
+		return "к"
 	}
 
-	return "к"
+	return "н"
 }
 
 func NewStorage(dumpFn helpers.DumpFn) (Storage, error) {
