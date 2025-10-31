@@ -52,7 +52,7 @@ type Note struct {
 	CategoryID    int           `db:"category_id"`
 	Sum           int           `db:"sum"`
 	Title         string        `db:"title"`
-	PaymentMethod PaymentMethod `db:"type"`
+	PaymentMethod PaymentMethod `db:"payment_method"`
 	Created       int64         `db:"created"`
 }
 
