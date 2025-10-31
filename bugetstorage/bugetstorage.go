@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/Frosin/shoplist-telegram-bot/helpers"
-	"github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/spf13/viper"
@@ -26,26 +25,35 @@ var (
 	txOptions = sql.TxOptions{Isolation: sql.LevelSerializable}
 )
 
-type Buget struct {
+type Budget struct {
 	ID      int
 	Title   string
 	Created int64
 }
 
 type Category struct {
-	ID      int
-	BugetID int
-	Title   string
-	Current int64
-	Target  int64
+	ID          int
+	BugetID     int
+	Title       string
+	Current     int64
+	CashCurrent int64
+	Target      int64
 }
 
+type PaymentMethod byte
+
+const (
+	PaymentMethodCash PaymentMethod = 0
+	PaymentMethodCard PaymentMethod = 1
+)
+
 type Note struct {
-	ID         int
-	CategoryID int
-	Sum        int
-	Title      string
-	Created    int64
+	ID            int
+	CategoryID    int
+	Sum           int
+	Title         string
+	PaymentMethod PaymentMethod
+	Created       int64
 }
 
 type Storage struct {
@@ -53,11 +61,19 @@ type Storage struct {
 	dumper *helpers.Dumper
 }
 
+func (m PaymentMethod) String() string {
+	if m == 0 {
+		return "н"
+	}
+
+	return "к"
+}
+
 func NewStorage(dumpFn helpers.DumpFn) (Storage, error) {
-	bugetPath := viper.GetString("SHOPLIST-BOT_BUGETPATH")
-	db, err := sqlx.Connect("sqlite3", bugetPath)
+	budgetPath := viper.GetString("SHOPLIST-BOT_BUGETPATH")
+	db, err := sqlx.Connect("sqlite3", budgetPath)
 	if err != nil {
-		return Storage{}, err
+		return Storage{}, fmt.Errorf("connecting to database: %w", err)
 	}
 
 	dumper := helpers.NewDumper(dumpFn, nil)
@@ -69,108 +85,54 @@ func NewStorage(dumpFn helpers.DumpFn) (Storage, error) {
 	}, nil
 }
 
-func (s Storage) InsertBuget(ctx context.Context, title string) error {
-	q, args, err := squirrel.
-		Insert(bugetDB).
-		Columns("title", "created").
-		Values(title, time.Now().Unix()).
-		PlaceholderFormat(squirrel.Dollar).
-		ToSql()
+func (s Storage) InsertBudget(ctx context.Context, title string) error {
+	query := `INSERT INTO budget (title, created) VALUES (?, ?)`
+
+	_, err := s.db.ExecContext(ctx, query, title, time.Now().Unix())
 	if err != nil {
-		return err
-	}
-	tx, err := s.db.BeginTx(ctx, &txOptions)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = tx.Rollback() }()
-	_, err = tx.Exec(q, args...)
-	if err != nil {
-		return err
-	}
-	if err := tx.Commit(); err != nil {
-		return err
+		return fmt.Errorf("inserting budget: %w", err)
 	}
 
 	s.dumper.ScheduleUpdate()
 	return nil
 }
 
-func (s Storage) GetBuget(ctx context.Context, ID int) (Buget, error) {
-	q, args, err := squirrel.
-		Select("id", "title", "created").
-		From(bugetDB).
-		Where(squirrel.Eq{"id": ID}).
-		PlaceholderFormat(squirrel.Dollar).
-		ToSql()
+func (s Storage) GetBudget(ctx context.Context, ID int) (Budget, error) {
+	var budget Budget
+	query := `SELECT id, title, created FROM budget WHERE id = ?`
+
+	err := s.db.GetContext(ctx, &budget, query, ID)
 	if err != nil {
-		return Buget{}, err
-	}
-	buget := Buget{}
-	row := s.db.QueryRowContext(ctx, q, args...)
-	err = row.Scan(&buget.ID, &buget.Title, &buget.Created)
-	if err != nil {
-		return Buget{}, err
+		return Budget{}, fmt.Errorf("getting budget: %w", err)
 	}
 
-	return buget, nil
+	return budget, nil
 }
 
-func (s Storage) GetLastBugets(ctx context.Context, num uint64) ([]Buget, error) {
-	q, args, err := squirrel.
-		Select("id", "title", "created").
-		From(bugetDB).
-		OrderBy("created DESC").
-		Limit(num).
-		PlaceholderFormat(squirrel.Dollar).
-		ToSql()
+func (s Storage) GetLastBudgets(ctx context.Context, num uint64) ([]Budget, error) {
+	var budgets []Budget
+	query := `SELECT id, title, created FROM budget ORDER BY created DESC LIMIT ?`
+
+	err := s.db.SelectContext(ctx, &budgets, query, num)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("getting last budgets: %w", err)
 	}
-	bugets := []Buget{}
-	buget := Buget{}
-	rows, err := s.db.QueryxContext(ctx, q, args...)
-	if err != nil {
-		return nil, err
-	}
-	for rows.Next() {
-		err = rows.Scan(&buget.ID, &buget.Title, &buget.Created)
-		if err != nil {
-			return nil, err
-		}
-		bugets = append(bugets, buget)
-	}
-	return bugets, nil
+
+	return budgets, nil
 }
 
 func (s Storage) InsertCategory(ctx context.Context, category Category) error {
-	q, args, err := squirrel.
-		Insert(categoryDB).
-		Columns(
-			"buget_id", "title",
-			"current", "target",
-		).
-		Values(
-			category.BugetID, category.Title,
-			category.Current, category.Target,
-		).
-		PlaceholderFormat(squirrel.Dollar).
-		ToSql()
-	if err != nil {
-		return err
-	}
-	tx, err := s.db.BeginTx(ctx, &txOptions)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = tx.Rollback() }()
-	_, err = tx.Exec(q, args...)
-	if err != nil {
-		return err
-	}
 
-	if err := tx.Commit(); err != nil {
-		return err
+	query := `
+		INSERT INTO category (buget_id, title, current, cash_current, target) 
+		VALUES (?, ?, ?, ?, ?)`
+
+	_, err := s.db.ExecContext(ctx, query,
+		category.BugetID, category.Title,
+		category.Current, category.CashCurrent, category.Target,
+	)
+	if err != nil {
+		return fmt.Errorf("inserting category: %w", err)
 	}
 
 	s.dumper.ScheduleUpdate()
@@ -178,155 +140,83 @@ func (s Storage) InsertCategory(ctx context.Context, category Category) error {
 }
 
 func (s Storage) InsertFund(ctx context.Context, category Category) error {
-	q, args, err := squirrel.
-		Insert(categoryDB).
-		Columns(
-			"buget_id",
-			"title",
-			"current",
-			"target",
-		).
-		Values(
-			fundsBudgetID,
-			category.Title,
-			category.Current,
-			0,
-		).
-		PlaceholderFormat(squirrel.Dollar).
-		ToSql()
-	if err != nil {
-		return err
-	}
-	tx, err := s.db.BeginTx(ctx, &txOptions)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = tx.Rollback() }()
-	_, err = tx.Exec(q, args...)
-	if err != nil {
-		return err
-	}
+	query := `
+		INSERT INTO category (buget_id, title, current, target) 
+		VALUES (?, ?, ?, ?)`
 
-	if err := tx.Commit(); err != nil {
-		return err
+	_, err := s.db.ExecContext(ctx, query,
+		fundsBudgetID, category.Title, category.Current, 0,
+	)
+	if err != nil {
+		return fmt.Errorf("inserting fund: %w", err)
 	}
 
 	s.dumper.ScheduleUpdate()
 	return nil
 }
 
-func (s Storage) UpdateCategory(ctx context.Context, categoryID int, sum int) error {
-	q, args, err := squirrel.
-		Update(categoryDB).
-		Set("current", sum).
-		Where(squirrel.Eq{"id": categoryID}).
-		PlaceholderFormat(squirrel.Dollar).
-		ToSql()
+func (s Storage) UpdateCategory(ctx context.Context, categoryID int, current, cashCurrent int64) error {
+	tx, err := s.db.BeginTxx(ctx, &txOptions)
 	if err != nil {
-		return err
-	}
-
-	tx, err := s.db.BeginTx(ctx, &txOptions)
-	if err != nil {
-		return err
+		return fmt.Errorf("beginning transaction: %w", err)
 	}
 	defer func() { _ = tx.Rollback() }()
-	_, err = tx.Exec(q, args...)
+
+	query := `UPDATE category SET current = ?, cash_current = ? WHERE id = ?`
+	_, err = tx.ExecContext(ctx, query, current, cashCurrent, categoryID)
 	if err != nil {
-		return err
+		return fmt.Errorf("updating category: %w", err)
 	}
 
 	if err := tx.Commit(); err != nil {
-		return err
+		return fmt.Errorf("committing transaction: %w", err)
 	}
 
 	s.dumper.ScheduleUpdate()
 	return nil
 }
 
-func (s Storage) UpdateFund(ctx context.Context, categoryID int, sum int) error {
-	return s.UpdateCategory(ctx, categoryID, sum)
+func (s Storage) UpdateFund(ctx context.Context, categoryID int, current int64) error {
+	return s.UpdateCategory(ctx, categoryID, current, 0)
 }
 
-func (s Storage) GetBugetCategories(ctx context.Context, bugetID int) ([]Category, error) {
-	q, args, err := squirrel.
-		Select("id", "buget_id", "title", "current", "target").
-		From(categoryDB).
-		Where(squirrel.Eq{"buget_id": bugetID}).
-		PlaceholderFormat(squirrel.Dollar).
-		ToSql()
+func (s Storage) GetBudgetCategories(ctx context.Context, budgetID int) ([]Category, error) {
+	var categories []Category
+	query := `
+		SELECT id, buget_id, title, current, cash_current, target 
+		FROM category WHERE buget_id = ?`
+
+	err := s.db.SelectContext(ctx, &categories, query, budgetID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("getting budget categories: %w", err)
 	}
-	categories := []Category{}
-	category := Category{}
-	rows, err := s.db.QueryxContext(ctx, q, args...)
-	if err != nil {
-		return nil, err
-	}
-	for rows.Next() {
-		err = rows.Scan(
-			&category.ID, &category.BugetID,
-			&category.Title, &category.Current,
-			&category.Target,
-		)
-		if err != nil {
-			return nil, err
-		}
-		categories = append(categories, category)
-	}
+
 	return categories, nil
 }
 
 func (s Storage) GetFunds(ctx context.Context) ([]Category, error) {
-	q, args, err := squirrel.
-		Select("id", "buget_id", "title", "current").
-		From(categoryDB).
-		Where(squirrel.Eq{"buget_id": fundsBudgetID}).
-		PlaceholderFormat(squirrel.Dollar).
-		ToSql()
+	var categories []Category
+	query := `SELECT id, buget_id, title, current FROM category WHERE buget_id = ?`
+
+	err := s.db.SelectContext(ctx, &categories, query, fundsBudgetID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("getting funds: %w", err)
 	}
-	categories := []Category{}
-	category := Category{}
-	rows, err := s.db.QueryxContext(ctx, q, args...)
-	if err != nil {
-		return nil, err
-	}
-	for rows.Next() {
-		err = rows.Scan(
-			&category.ID, &category.BugetID,
-			&category.Title, &category.Current,
-		)
-		if err != nil {
-			return nil, err
-		}
-		categories = append(categories, category)
-	}
+
 	return categories, nil
 }
 
 func (s Storage) GetCategory(ctx context.Context, ID int) (Category, error) {
-	q, args, err := squirrel.
-		Select("id", "buget_id", "title", "current", "target").
-		From(categoryDB).
-		Where(squirrel.Eq{"id": ID}).
-		PlaceholderFormat(squirrel.Dollar).
-		ToSql()
+	var category Category
+	query := `
+		SELECT id, buget_id, title, current, cash_current, target 
+		FROM category WHERE id = ?`
+
+	err := s.db.GetContext(ctx, &category, query, ID)
 	if err != nil {
-		return Category{}, err
+		return Category{}, fmt.Errorf("getting category: %w", err)
 	}
-	category := Category{}
-	row := s.db.QueryRowContext(ctx, q, args...)
-	err = row.Scan(
-		&category.ID, &category.BugetID,
-		&category.Title, &category.Current,
-		&category.Target,
-	)
-	if err != nil {
-		return Category{}, err
-	}
+
 	return category, nil
 }
 
@@ -335,100 +225,82 @@ func (s Storage) GetFund(ctx context.Context, ID int) (Category, error) {
 }
 
 func (s Storage) InsertNote(ctx context.Context, note Note) error {
-	q, args, err := squirrel.
-		Insert(noteDB).
-		Columns(
-			"category_id",
-			"title",
-			"sum",
-			"created",
-		).
-		Values(
-			note.CategoryID,
-			note.Title,
-			note.Sum,
-			time.Now().Unix(),
-		).
-		PlaceholderFormat(squirrel.Dollar).
-		ToSql()
+	tx, err := s.db.BeginTxx(ctx, &txOptions)
 	if err != nil {
-		return err
-	}
-	tx, err := s.db.BeginTx(ctx, &txOptions)
-	if err != nil {
-		return err
+		return fmt.Errorf("beginning transaction: %w", err)
 	}
 	defer func() { _ = tx.Rollback() }()
-	_, err = tx.Exec(q, args...)
+
+	query := `INSERT INTO note (category_id, title, sum, payment_method, created) VALUES (?, ?, ?, ?, ?)`
+	_, err = tx.ExecContext(ctx, query,
+		note.CategoryID, note.Title, note.Sum, note.PaymentMethod, time.Now().Unix(),
+	)
 	if err != nil {
+		return fmt.Errorf("inserting note: %w", err)
+	}
+
+	// Обновляем баланс категории
+	if err := s.updateCategoryBalance(ctx, tx, note.CategoryID, note.Sum, note.PaymentMethod); err != nil {
 		return err
 	}
 
 	if err := tx.Commit(); err != nil {
-		return err
+		return fmt.Errorf("committing transaction: %w", err)
 	}
 
 	s.dumper.ScheduleUpdate()
 	return nil
 }
 
+func (s Storage) updateCategoryBalance(ctx context.Context, tx *sqlx.Tx, categoryID int, sum int, paymentType PaymentMethod) error {
+	var category Category
+	err := tx.GetContext(ctx, &category, "SELECT current, cash_current FROM category WHERE id = ?", categoryID)
+	if err != nil {
+		return fmt.Errorf("getting category for update: %w", err)
+	}
+
+	newCurrent := category.Current + int64(sum)
+
+	newCashCurrent := category.CashCurrent
+	if paymentType == PaymentMethodCash {
+		newCashCurrent += int64(sum)
+	}
+
+	_, err = tx.ExecContext(ctx,
+		"UPDATE category SET current = ?, cash_current = ? WHERE id = ?",
+		newCurrent, newCashCurrent, categoryID,
+	)
+	if err != nil {
+		return fmt.Errorf("updating category balance: %w", err)
+	}
+
+	return nil
+}
+
 func (s Storage) GetCategoryNotes(ctx context.Context, categoryID int) ([]Note, error) {
-	q, args, err := squirrel.
-		Select("id", "category_id", "title", "sum", "created").
-		From(noteDB).
-		Where(squirrel.Eq{"category_id": categoryID}).
-		PlaceholderFormat(squirrel.Dollar).
-		ToSql()
+	var notes []Note
+	query := `SELECT id, category_id, title, sum, payment_method, created FROM note WHERE category_id = ?`
+
+	err := s.db.SelectContext(ctx, &notes, query, categoryID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("getting category notes: %w", err)
 	}
-	notes := []Note{}
-	note := Note{}
-	rows, err := s.db.QueryxContext(ctx, q, args...)
-	if err != nil {
-		return nil, err
-	}
-	for rows.Next() {
-		err = rows.Scan(
-			&note.ID, &note.CategoryID,
-			&note.Title, &note.Sum, &note.Created,
-		)
-		if err != nil {
-			return nil, err
-		}
-		notes = append(notes, note)
-	}
+
 	return notes, nil
 }
 
-func (s Storage) GetBugetNotes(ctx context.Context, bugetID int) ([]Note, error) {
+func (s Storage) GetBudgetNotes(ctx context.Context, budgetID int) ([]Note, error) {
+	var notes []Note
+	query := `
+		SELECT n.id, n.category_id, n.title, n.sum, n.payment_method, n.created 
+		FROM note n
+		INNER JOIN category c ON n.category_id = c.id 
+		WHERE c.buget_id = ?`
 
-	subQ := fmt.Sprintf("category_id in (select id from %s where buget_id=%d)", categoryDB, bugetID)
+	err := s.db.SelectContext(ctx, &notes, query, budgetID)
+	if err != nil {
+		return nil, fmt.Errorf("getting budget notes: %w", err)
+	}
 
-	q, args, err := squirrel.
-		Select("id", "category_id", "title", "sum", "created").
-		From(noteDB).
-		Where(subQ).
-		PlaceholderFormat(squirrel.Dollar).
-		ToSql()
-	if err != nil {
-		return nil, err
-	}
-	notes := []Note{}
-	note := Note{}
-	rows, err := s.db.QueryxContext(ctx, q, args...)
-	if err != nil {
-		return nil, err
-	}
-	for rows.Next() {
-		err = rows.Scan(
-			&note.ID, &note.CategoryID,
-			&note.Title, &note.Sum, &note.Created,
-		)
-		if err != nil {
-			return nil, err
-		}
-		notes = append(notes, note)
-	}
 	return notes, nil
 }

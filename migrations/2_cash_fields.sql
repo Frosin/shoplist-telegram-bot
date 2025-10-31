@@ -1,0 +1,3 @@
+ALTER TABLE category ADD COLUMN cash_current INTEGER DEFAULT 0;
+
+ALTER TABLE note ADD COLUMN payment_method INTEGER DEFAULT 0;

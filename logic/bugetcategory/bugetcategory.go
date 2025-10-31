@@ -6,6 +6,7 @@ import (
 	"log"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"context"
@@ -26,14 +27,14 @@ const (
 	newbugetCategoryText = "*** Создать новый ***"
 	emptyItems           = "Нет категорий для отображения"
 
-	catText = "Категория: %s освоение %d%% (%d/%d):\n"
+	catText = "Категория: %s освоение %d%% (%d картой + %d налик / %d):\n"
 )
 
 var (
 	timeout = time.Second * 5
 
 	patternCallback = regexp.MustCompile(`i(\d+)`)
-	patternNewNote  = regexp.MustCompile(`(-?)(\d+)\s+(.+)`)
+	patternNewNote  = regexp.MustCompile(`(-?)(\d+)([нкНКncNC])\s+(.+)`)
 )
 
 type bugetCategory struct {
@@ -95,15 +96,24 @@ func (c *bugetCategory) GetMessageOutput(curData string, msg string) (logic.Outp
 	}
 
 	m := patternNewNote.FindStringSubmatch(msg)
-	if len(m) != 4 {
-		return c.getOutput(category)
+	if len(m) != 5 {
+		return logic.Output{}, fmt.Errorf("Ошибка! Пример верного написания: \"500н хлеб и молоко\" ")
 	}
-	noteTitle := m[3]
+	noteTitle := m[4]
 	noteSum, _ := strconv.Atoi(m[2])
 
 	//if minus
 	if m[1] != "" {
 		noteSum = noteSum * -1
+	}
+
+	method := bugetstorage.PaymentMethodCard
+	typeChar := strings.ToLower(m[3])
+	switch typeChar {
+	case "н":
+		method = bugetstorage.PaymentMethodCash
+	case "n":
+		method = bugetstorage.PaymentMethodCash
 	}
 
 	newCurrent := category.Current + int64(noteSum)
@@ -113,16 +123,13 @@ func (c *bugetCategory) GetMessageOutput(curData string, msg string) (logic.Outp
 		(category.Current-category.Target) > 0 {
 		return logic.Output{}, fmt.Errorf("%v: %w", consts.BugetCategoryWord, errors.New("В категории не осталось средств!"))
 	}
-	//update category
-	if err := c.storage.UpdateCategory(ctx, categoryID, int(newCurrent)); err != nil {
-		return logic.Output{}, fmt.Errorf("%v: %w", consts.BugetCategoryWord, err)
-	}
-	//create new note
+
 	note := bugetstorage.Note{
-		CategoryID: categoryID,
-		Sum:        noteSum,
-		Title:      noteTitle,
-		Created:    time.Now().Unix(),
+		CategoryID:    categoryID,
+		Sum:           noteSum,
+		Title:         noteTitle,
+		PaymentMethod: method,
+		Created:       time.Now().Unix(),
 	}
 	if err := c.storage.InsertNote(ctx, note); err != nil {
 		return logic.Output{}, fmt.Errorf("%v: %w", consts.BugetCategoryWord, err)
@@ -162,10 +169,12 @@ func (c *bugetCategory) getOutput(category bugetstorage.Category) (logic.Output,
 		fillPercent = int64(category.Current * 100 / category.Target)
 	}
 
-	outTxt := fmt.Sprintf(catText, category.Title, fillPercent, category.Current, category.Target)
+	categoryByCard := (category.Current - category.CashCurrent)
+
+	outTxt := fmt.Sprintf(catText, category.Title, fillPercent, categoryByCard, category.CashCurrent, category.Target)
 	for i, v := range notes {
 		t := time.Unix(v.Created, 0).Format(dateLayout)
-		noteTxt := fmt.Sprintf("%d) %s -> %dр. - %s\n", i+1, t, v.Sum, v.Title)
+		noteTxt := fmt.Sprintf("%d) %s -> %dр.(%s) - %s\n", i+1, t, v.Sum, v.PaymentMethod.String(), v.Title)
 		outTxt += noteTxt
 	}
 

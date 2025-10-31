@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	bugetTxt = `Бюджет: '%s', освоение: %d%%, остаток %d
+	bugetTxt = `Бюджет: '%s', освоение: %d%%(%dр, из них %dр картой + %dр наликом), остаток %d
 	Пример добавления категории: "25000 продукты"
 	Пример добавления бюджета: "!Июнь"`
 	backText   = "⬅ Назад"
@@ -62,7 +62,7 @@ func (c *buget) GetMessageOutput(curData string, msg string) (logic.Output, erro
 	m := patternNewBudget.FindStringSubmatch(msg)
 	if len(m) == 2 {
 		//create new budget
-		err := c.storage.InsertBuget(ctx, m[1])
+		err := c.storage.InsertBudget(ctx, m[1])
 		if err != nil {
 			return logic.Output{}, fmt.Errorf("%v: %w", consts.BugetWord, err)
 		}
@@ -91,7 +91,7 @@ func (c *buget) GetMessageOutput(curData string, msg string) (logic.Output, erro
 		},
 	}
 
-	lastBuget, err := c.storage.GetLastBugets(ctx, 1)
+	lastBuget, err := c.storage.GetLastBudgets(ctx, 1)
 	if err != nil && err != sql.ErrNoRows {
 		return logic.Output{}, fmt.Errorf("%v: %w", consts.BugetWord, err)
 	}
@@ -137,7 +137,7 @@ func (c *buget) getOutput() (logic.Output, error) {
 		},
 	}
 
-	lastBuget, err := c.storage.GetLastBugets(ctx, 1)
+	lastBuget, err := c.storage.GetLastBudgets(ctx, 1)
 	if err != nil && err != sql.ErrNoRows {
 		return logic.Output{}, fmt.Errorf("%v: %w", consts.BugetWord, err)
 	}
@@ -146,7 +146,7 @@ func (c *buget) getOutput() (logic.Output, error) {
 		return emptyOut, nil
 	}
 
-	categories, err := c.storage.GetBugetCategories(ctx, lastBuget[0].ID)
+	categories, err := c.storage.GetBudgetCategories(ctx, lastBuget[0].ID)
 	if err != nil && err != sql.ErrNoRows {
 		return logic.Output{}, fmt.Errorf("%v: %w", consts.BugetWord, err)
 	}
@@ -157,11 +157,12 @@ func (c *buget) getOutput() (logic.Output, error) {
 
 	column := [][]tgbotapi.InlineKeyboardButton{}
 
-	var targetSum, curSum int64
+	var targetSum, curSum, currentCashSum int64
 	// create items list to show
 	for i, category := range categories {
 		curSum += category.Current
 		targetSum += category.Target
+		currentCashSum += category.CashCurrent
 
 		itemIDStr := strconv.Itoa(category.ID)
 		itemName := category.Title
@@ -202,7 +203,9 @@ func (c *buget) getOutput() (logic.Output, error) {
 	}
 	remainder := targetSum - curSum
 
-	outTxt := fmt.Sprintf(bugetTxt, lastBuget[0].Title, totalPercent, remainder)
+	curSumCard := curSum - currentCashSum
+
+	outTxt := fmt.Sprintf(bugetTxt, lastBuget[0].Title, totalPercent, curSum, curSumCard, currentCashSum, remainder)
 
 	output := logic.Output{
 		Message:  outTxt,
