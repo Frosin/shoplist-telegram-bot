@@ -26,18 +26,18 @@ var (
 )
 
 type Budget struct {
-	ID      int
-	Title   string
-	Created int64
+	ID      int    `db:"id"`
+	Title   string `db:"title"`
+	Created int64  `db:"created"`
 }
 
 type Category struct {
-	ID          int
-	BugetID     int
-	Title       string
-	Current     int
-	CashCurrent int
-	Target      int
+	ID          int    `db:"id"`
+	BugetID     int    `db:"buget_id"`
+	Title       string `db:"title"`
+	Current     int    `db:"current"`
+	CashCurrent int    `db:"cash_current"`
+	Target      int    `db:"target"`
 }
 
 type PaymentMethod byte
@@ -48,12 +48,12 @@ const (
 )
 
 type Note struct {
-	ID            int
-	CategoryID    int
-	Sum           int
-	Title         string
-	PaymentMethod PaymentMethod
-	Created       int64
+	ID            int           `db:"id"`
+	CategoryID    int           `db:"category_id"`
+	Sum           int           `db:"sum"`
+	Title         string        `db:"title"`
+	PaymentMethod PaymentMethod `db:"type"`
+	Created       int64         `db:"created"`
 }
 
 type Storage struct {
