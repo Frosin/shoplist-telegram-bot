@@ -86,7 +86,7 @@ func NewStorage(dumpFn helpers.DumpFn) (Storage, error) {
 }
 
 func (s Storage) InsertBudget(ctx context.Context, title string) error {
-	query := `INSERT INTO budget (title, created) VALUES (?, ?)`
+	query := `INSERT INTO buget (title, created) VALUES (?, ?)`
 
 	_, err := s.db.ExecContext(ctx, query, title, time.Now().Unix())
 	if err != nil {
@@ -99,7 +99,7 @@ func (s Storage) InsertBudget(ctx context.Context, title string) error {
 
 func (s Storage) GetBudget(ctx context.Context, ID int) (Budget, error) {
 	var budget Budget
-	query := `SELECT id, title, created FROM budget WHERE id = ?`
+	query := `SELECT id, title, created FROM buget WHERE id = ?`
 
 	err := s.db.GetContext(ctx, &budget, query, ID)
 	if err != nil {
@@ -111,7 +111,7 @@ func (s Storage) GetBudget(ctx context.Context, ID int) (Budget, error) {
 
 func (s Storage) GetLastBudgets(ctx context.Context, num uint) ([]Budget, error) {
 	var budgets []Budget
-	query := `SELECT id, title, created FROM budget ORDER BY created DESC LIMIT ?`
+	query := `SELECT id, title, created FROM buget ORDER BY created DESC LIMIT ?`
 
 	err := s.db.SelectContext(ctx, &budgets, query, num)
 	if err != nil {
