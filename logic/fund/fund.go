@@ -112,13 +112,6 @@ func (c *bugetCategory) GetMessageOutput(curData string, msg string) (logic.Outp
 		noteSum = noteSum * -1
 	}
 
-	newCurrent := fund.Current + noteSum
-	fund.Current = newCurrent
-	//update category
-	if err := c.storage.UpdateFund(ctx, fundID, int(newCurrent)); err != nil {
-		return logic.Output{}, fmt.Errorf("%v: %w", consts.FundWord, err)
-	}
-	//create new note
 	note := bugetstorage.Note{
 		CategoryID: fundID,
 		Sum:        noteSum,
@@ -129,7 +122,12 @@ func (c *bugetCategory) GetMessageOutput(curData string, msg string) (logic.Outp
 		return logic.Output{}, fmt.Errorf("%v: %w", consts.FundWord, err)
 	}
 
-	return c.getOutput(fund)
+	updatedFund, err := c.storage.GetCategory(ctx, fundID)
+	if err != nil {
+		return logic.Output{}, fmt.Errorf("%v: %w", consts.BugetCategoryWord, err)
+	}
+
+	return c.getOutput(updatedFund)
 }
 
 func (c *bugetCategory) getOutput(category bugetstorage.Category) (logic.Output, error) {

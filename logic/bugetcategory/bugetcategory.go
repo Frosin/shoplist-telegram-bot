@@ -27,14 +27,14 @@ const (
 	newbugetCategoryText = "*** Создать новый ***"
 	emptyItems           = "Нет категорий для отображения"
 
-	catText = "Категория: %s освоение %d%% (%d картой + %d налик / %d):\n"
+	catText = "Категория: %s освоение %d%% (%d картой + %d наликом / %d):\n"
 )
 
 var (
 	timeout = time.Second * 5
 
 	patternCallback = regexp.MustCompile(`i(\d+)`)
-	patternNewNote  = regexp.MustCompile(`(-?)(\d+)([нкНКncNC])\s+(.+)`)
+	patternNewNote  = regexp.MustCompile(`(-?)(\d+)([нкНК])\s+(.+)`)
 )
 
 type bugetCategory struct {
@@ -135,7 +135,12 @@ func (c *bugetCategory) GetMessageOutput(curData string, msg string) (logic.Outp
 		return logic.Output{}, fmt.Errorf("%v: %w", consts.BugetCategoryWord, err)
 	}
 
-	return c.getOutput(category)
+	updatedCategory, err := c.storage.GetCategory(ctx, categoryID)
+	if err != nil {
+		return logic.Output{}, fmt.Errorf("%v: %w", consts.BugetCategoryWord, err)
+	}
+
+	return c.getOutput(updatedCategory)
 }
 
 func (c *bugetCategory) getOutput(category bugetstorage.Category) (logic.Output, error) {

@@ -176,10 +176,6 @@ func (s Storage) UpdateCategory(ctx context.Context, categoryID int, current, ca
 	return nil
 }
 
-func (s Storage) UpdateFund(ctx context.Context, categoryID int, current int) error {
-	return s.UpdateCategory(ctx, categoryID, current, 0)
-}
-
 func (s Storage) GetBudgetCategories(ctx context.Context, budgetID int) ([]Category, error) {
 	var categories []Category
 	query := `
