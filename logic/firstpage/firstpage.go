@@ -1,6 +1,9 @@
 package firstpage
 
 import (
+	"runtime/debug"
+	"time"
+
 	"github.com/Frosin/shoplist-telegram-bot/consts"
 	"github.com/Frosin/shoplist-telegram-bot/logic"
 	"github.com/Frosin/shoplist-telegram-bot/session"
@@ -26,7 +29,7 @@ const (
 	CalendarCmd  = "calendar"
 	BugetCmd     = "buget"
 
-	firstPageMessage = "firstPage"
+	commitDateLayout = "02.01.2006 15:04"
 )
 
 type firstpage struct{}
@@ -67,9 +70,26 @@ func getButtons() *tgbotapi.InlineKeyboardMarkup {
 	}
 }
 
+func commitDate() string {
+	info, ok := debug.ReadBuildInfo()
+	if !ok {
+		return "unknown"
+	}
+	for _, s := range info.Settings {
+		if s.Key == "vcs.time" {
+			t, err := time.Parse(time.RFC3339, s.Value)
+			if err != nil {
+				return s.Value
+			}
+			return t.Format(commitDateLayout)
+		}
+	}
+	return "unknown"
+}
+
 func getOutput() (logic.Output, error) {
 	return logic.Output{
-		Message:  firstPageMessage,
+		Message:  commitDate(),
 		Keyboard: getButtons(),
 	}, nil
 }
