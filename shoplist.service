@@ -7,9 +7,9 @@ After=network.target
 Type=simple
 User=pi     
 Group=pi
-WorkingDirectory=/home/pi/SHOPLIST/
-ExecStart=/home/pi/SHOPLIST/shoplist-telegram-bot
-StandardOutput=file:/home/pi/shoplist.log
+WorkingDirectory=/root/shoplist
+ExecStart=/root/shoplist/shoplist-telegram-bot
+StandardOutput=file:/root/shoplist/shoplist.log
 Restart=always
 RestartSec=30
 
