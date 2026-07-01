@@ -11,13 +11,14 @@ import (
 const (
 	FirstpageWord = "firstpage"
 
-	curList   = "Текущий список"
-	checkList = "Чек-лист"
-	settings  = "Настройки"
-	calendar  = "Календарь"
-	buget     = "Бюджет"
-	funds     = "Фонды"
-	iot       = "iot"
+	curList       = "Текущий список"
+	checkList     = "Чек-лист"
+	settings      = "Настройки"
+	calendar      = "Календарь"
+	buget         = "Бюджет"
+	funds         = "Фонды"
+	iot           = "iot"
+	budgetHistory = "История бюджетов"
 
 	CurListCmd   = "curlist"
 	CheckListCmd = "checklist"
@@ -61,6 +62,7 @@ func getButtons() *tgbotapi.InlineKeyboardMarkup {
 			{tgbotapi.NewInlineKeyboardButtonData(buget, consts.BugetStart)},
 			{tgbotapi.NewInlineKeyboardButtonData(funds, consts.FundsStart)},
 			{tgbotapi.NewInlineKeyboardButtonData(iot, consts.IOTStart)},
+			{tgbotapi.NewInlineKeyboardButtonData(budgetHistory, consts.BudgetHistoryStart)},
 		},
 	}
 }

@@ -20,6 +20,9 @@ import (
 	"github.com/Frosin/shoplist-telegram-bot/logic"
 	"github.com/Frosin/shoplist-telegram-bot/logic/buget"
 	"github.com/Frosin/shoplist-telegram-bot/logic/bugetcategory"
+	"github.com/Frosin/shoplist-telegram-bot/logic/budgethistory"
+	"github.com/Frosin/shoplist-telegram-bot/logic/budgethistcat"
+	"github.com/Frosin/shoplist-telegram-bot/logic/budgethistnotes"
 	"github.com/Frosin/shoplist-telegram-bot/logic/calendar"
 	"github.com/Frosin/shoplist-telegram-bot/logic/checklist"
 	"github.com/Frosin/shoplist-telegram-bot/logic/currentlist"
@@ -313,10 +316,10 @@ func main() {
 	// output envs
 	log.Printf("port = %s", port)
 	log.Printf("sentryDsn = %s", sentryDsn)
-	log.Printf("token = %s", token)
+	log.Printf("token = %.8s...", token)
 	log.Printf("webhookURL = %s", webhookURL)
 	log.Printf("serviceURI = %s", serviceURI)
-	log.Printf("startToken = %s", startToken)
+	log.Printf("startToken = %.8s...", startToken)
 
 	sentryInit(sentryDsn)
 
@@ -372,7 +375,10 @@ func main() {
 		AddNode(consts.BugetCategoryWord, bugetcategory.New(bugetStorage)).
 		AddNode(consts.FundsWord, funds.New(bugetStorage)).
 		AddNode(consts.FundWord, fund.New(bugetStorage)).
-		AddNode(consts.IOTWord, iotlogic.New(iotStorage))
+		AddNode(consts.IOTWord, iotlogic.New(iotStorage)).
+		AddNode(consts.BudgetHistoryWord, budgethistory.New(bugetStorage)).
+		AddNode(consts.BudgetHistoryCatWord, budgethistcat.New(bugetStorage)).
+		AddNode(consts.BudgetHistoryNotesWord, budgethistnotes.New(bugetStorage))
 
 	log.Println("start updates")
 	for update := range updates {

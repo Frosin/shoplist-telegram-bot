@@ -97,7 +97,7 @@ func (c *bugetCategory) GetMessageOutput(curData string, msg string) (logic.Outp
 
 	m := patternNewNote.FindStringSubmatch(msg)
 	if len(m) != 5 {
-		return logic.Output{}, fmt.Errorf("Ошибка! Пример верного написания: \"500н хлеб и молоко\" ")
+		return c.getOutput(category)
 	}
 	noteTitle := m[4]
 	noteSum, _ := strconv.Atoi(m[2])

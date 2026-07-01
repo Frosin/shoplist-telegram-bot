@@ -75,6 +75,9 @@ func (s *shoppingItems) GetCallbackOutput(command string) (logic.Output, error) 
 			s.sessionItem.ClearDataArray()
 			return s.getOutput(parseResult, nil)
 		case consts.TypeOperationAddFromCurrent:
+			if _, err = s.sessionItem.SListAPI.GetShopping(parseResult.ShoppingID); err != nil {
+				return logic.Output{}, fmt.Errorf("%v: %w", consts.ShoppingitemsWord, err)
+			}
 			items, err := s.sessionItem.SListAPI.GetShoppingItems(parseResult.ShoppingID)
 			if err != nil {
 				return logic.Output{}, fmt.Errorf("%v: %w", consts.ChecklistWord, err)
@@ -127,6 +130,9 @@ func (s *shoppingItems) GetCallbackOutput(command string) (logic.Output, error) 
 			// show
 			return s.getOutput(parseResult, nil)
 		case consts.TypeOperationAddFromChecklist:
+			if _, err = s.sessionItem.SListAPI.GetShopping(parseResult.ShoppingID); err != nil {
+				return logic.Output{}, fmt.Errorf("%v: %w", consts.ShoppingitemsWord, err)
+			}
 			items, err := s.sessionItem.SListAPI.GetShoppingItems(parseResult.ShoppingID)
 			if err != nil {
 				return logic.Output{}, fmt.Errorf("%v: %w", consts.ChecklistWord, err)
@@ -189,6 +195,10 @@ func (s *shoppingItems) GetMessageOutput(curData string, msg string) (logic.Outp
 	fmt.Println("\nmsg=", msg)
 	fmt.Println("\nresult=", result)
 	//
+	if _, err = s.sessionItem.SListAPI.GetShopping(result.ShoppingID); err != nil {
+		return logic.Output{}, fmt.Errorf("%v: %w", consts.ShoppingitemsWord, err)
+	}
+
 	err = s.sessionItem.SListAPI.AddItem(result.ShoppingID, msg)
 	if err != nil {
 		return logic.Output{}, fmt.Errorf("%v: %w", consts.CurrentlistWord, err)

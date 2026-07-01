@@ -285,6 +285,18 @@ func (s Storage) GetCategoryNotes(ctx context.Context, categoryID int) ([]Note, 
 	return notes, nil
 }
 
+func (s Storage) GetAllBudgets(ctx context.Context) ([]Budget, error) {
+	var budgets []Budget
+	query := `SELECT id, title, created FROM buget ORDER BY created DESC`
+
+	err := s.db.SelectContext(ctx, &budgets, query)
+	if err != nil {
+		return nil, fmt.Errorf("getting all budgets: %w", err)
+	}
+
+	return budgets, nil
+}
+
 func (s Storage) GetBudgetNotes(ctx context.Context, budgetID int) ([]Note, error) {
 	var notes []Note
 	query := `

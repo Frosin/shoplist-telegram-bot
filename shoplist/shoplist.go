@@ -53,6 +53,9 @@ func (s *Shoplist) GetUserByTelegramID(telegramID int64) (*ent.User, error) {
 		Where(user.TelegramIDEQ(int64(telegramID))).
 		Only(ctx)
 	if err != nil {
+		if ent.IsNotFound(err) {
+			return nil, consts.ErrNotFound
+		}
 		return nil, fmt.Errorf("GetUserByTelegramID error: %w", err)
 	}
 
@@ -169,7 +172,7 @@ func (s *Shoplist) getCommunityUsers() (int, []int, error) {
 		return 0, nil, fmt.Errorf("getCommunityUsers getUser error: %w", err)
 	}
 
-	log.Infof("userID=%v, userTelegramID=%v, userToken=%v, userComunityID=%v", usr.ID, usr.TelegramID, usr.Token, usr.ComunityID)
+	log.Infof("userID=%v, userTelegramID=%v, userComunityID=%v", usr.ID, usr.TelegramID, usr.ComunityID)
 
 	comunityUsers, err := s.ent.User.
 		Query().
