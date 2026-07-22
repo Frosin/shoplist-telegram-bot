@@ -25,6 +25,7 @@ const (
 	BugetCategoryStart    = "bugetcategory_start"
 	FundsStart            = "funds_start"
 	IOTStart              = "iot_start"
+	BenzStart             = "benz_start"
 	BudgetHistoryStart = "budgethistory_start"
 
 	CalendarWord      = "calendar"
@@ -38,6 +39,7 @@ const (
 	FundsWord             = "funds"
 	FundWord              = "fund"
 	IOTWord               = "iot"
+	BenzWord              = "benz"
 	BudgetHistoryWord     = "budgethistory"
 	BudgetHistoryCatWord  = "budgethistcat"
 	BudgetHistoryNotesWord = "budgethistnotes"
