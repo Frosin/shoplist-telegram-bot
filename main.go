@@ -12,8 +12,6 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/spf13/viper"
 
-	"github.com/Frosin/shoplist-telegram-bot/benz"
-	"github.com/Frosin/shoplist-telegram-bot/benzstorage"
 	"github.com/Frosin/shoplist-telegram-bot/bugetstorage"
 	"github.com/Frosin/shoplist-telegram-bot/consts"
 	"github.com/Frosin/shoplist-telegram-bot/helpers"
@@ -25,7 +23,6 @@ import (
 	"github.com/Frosin/shoplist-telegram-bot/logic/budgethistory"
 	"github.com/Frosin/shoplist-telegram-bot/logic/budgethistcat"
 	"github.com/Frosin/shoplist-telegram-bot/logic/budgethistnotes"
-	"github.com/Frosin/shoplist-telegram-bot/logic/benzlogic"
 	"github.com/Frosin/shoplist-telegram-bot/logic/calendar"
 	"github.com/Frosin/shoplist-telegram-bot/logic/checklist"
 	"github.com/Frosin/shoplist-telegram-bot/logic/currentlist"
@@ -33,6 +30,7 @@ import (
 	"github.com/Frosin/shoplist-telegram-bot/logic/firstpage"
 	"github.com/Frosin/shoplist-telegram-bot/logic/fund"
 	"github.com/Frosin/shoplist-telegram-bot/logic/funds"
+	"github.com/Frosin/shoplist-telegram-bot/logic/iotlogic"
 	"github.com/Frosin/shoplist-telegram-bot/logic/settings"
 	"github.com/Frosin/shoplist-telegram-bot/logic/shoppingitems"
 	"github.com/Frosin/shoplist-telegram-bot/metrics"
@@ -321,11 +319,6 @@ func main() {
 	log.Printf("token = %.8s...", token)
 	log.Printf("webhookURL = %s", webhookURL)
 	log.Printf("serviceURI = %s", serviceURI)
-	benzPath := viper.GetString("SHOPLIST-BOT_BENZPATH")
-	if benzPath == "" {
-		benzPath = "./db/benz.db"
-	}
-	log.Printf("benzPath = %s", benzPath)
 	log.Printf("startToken = %.8s...", startToken)
 
 	sentryInit(sentryDsn)
@@ -369,12 +362,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	benzStorage, err := benzstorage.NewStorage(benzPath)
-	if err != nil {
-		log.Fatal(err)
-	}
-	benz.StartCollector(benzStorage)
-
 	//Create new logic with pages (nodes)
 	appLogic := logic.New().
 		AddNode(calendar.CalendarWord, calendar.New()).
@@ -388,7 +375,7 @@ func main() {
 		AddNode(consts.BugetCategoryWord, bugetcategory.New(bugetStorage)).
 		AddNode(consts.FundsWord, funds.New(bugetStorage)).
 		AddNode(consts.FundWord, fund.New(bugetStorage)).
-		AddNode(consts.BenzWord, benzlogic.New(benzStorage)).
+		AddNode(consts.IOTWord, iotlogic.New(iotStorage)).
 		AddNode(consts.BudgetHistoryWord, budgethistory.New(bugetStorage)).
 		AddNode(consts.BudgetHistoryCatWord, budgethistcat.New(bugetStorage)).
 		AddNode(consts.BudgetHistoryNotesWord, budgethistnotes.New(bugetStorage))

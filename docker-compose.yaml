@@ -15,7 +15,6 @@ services:
     volumes:
       - ./db/buget.db:/go/src/github.com/Frosin/shoplist-telegram-bot/db/buget.db
       - ./db/shoplist.db:/go/src/github.com/Frosin/shoplist-telegram-bot/db/shoplist.db
-      - ./db/benz.db:/go/src/github.com/Frosin/shoplist-telegram-bot/db/benz.db
 
 networks:
   shoplist:
